@@ -733,20 +733,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
   </div>
 
 
+
   <div class="data-section">
-    <div class="data-sec-title">☁️ Google Drive 자동 동기화</div>
+    <div class="data-sec-title">☁️ Supabase 자동 동기화</div>
     <div class="data-sec-desc">
       PC·핸드폰 어디서든 같은 데이터를 사용할 수 있어요.<br>
-      Apps Script URL을 한 번만 입력하면 앱을 열 때마다 자동으로 불러옵니다.
-    </div>
-    <div class="form-group" style="margin-bottom:10px">
-      <label class="form-label">Apps Script 웹 앱 URL</label>
-      <input type="text" class="form-input" id="gasUrlInput" placeholder="https://script.google.com/macros/s/xxxxx/exec" style="font-size:12px">
+      이미 설정이 완료되어 있어요. 앱을 열 때마다 자동으로 불러옵니다.
     </div>
     <div class="data-actions">
-      <button class="btn-data primary" onclick="saveGasConfig()">💾 설정 저장</button>
-      <button class="btn-data secondary" onclick="pushToGas()">⬆️ 지금 업로드</button>
-      <button class="btn-data secondary" onclick="pullFromGas()">⬇️ 지금 불러오기</button>
+      <button class="btn-data primary" onclick="pushToSupabase()">⬆️ 지금 저장</button>
+      <button class="btn-data secondary" onclick="pullFromSupabase()">⬇️ 지금 불러오기</button>
     </div>
     <div id="gistStatus" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
   </div>
@@ -1077,16 +1073,14 @@ function updateSaveInfo() {
   const dot = document.getElementById('saveDot');
   const info = document.getElementById('saveInfo');
   const disp = document.getElementById('lastSaveDisplay');
-  const cfg = getGasConfig();
-  const connected = !!cfg.url;
   if(DB.savedAt) {
     const d = new Date(DB.savedAt);
     const s = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    if(info) info.textContent = (connected?'☁️ Google Drive 연동됨 · ':'')+'마지막 저장: '+s;
+    if(info) info.textContent = '☁️ Supabase 연동됨 · 마지막 저장: '+s;
     if(disp) disp.textContent = s;
     if(dot) dot.className = 'save-dot ok';
   } else {
-    if(info) info.textContent = connected ? '☁️ Google Drive 연동됨 · 아직 저장 전' : '아직 저장하지 않았습니다';
+    if(info) info.textContent = '☁️ Supabase 연동됨 · 아직 저장 전';
     if(disp) disp.textContent = '없음';
     if(dot) dot.className = 'save-dot warn';
   }
@@ -1099,16 +1093,8 @@ function init() {
   loadDB();
   const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth(); selDate = today();
   setupDropZone();
-  loadGasConfig();
-  const cfg = getGasConfig();
-  if(cfg.url) {
-    // GAS 설정 있으면 무조건 Google Drive에서 불러오기 (샘플 실행 안 함)
-    pullFromGas(true);
-  } else {
-    // GAS 설정 없으면 로컬 데이터 사용, 없으면 샘플
-    insertSample();
-    renderAll();
-  }
+  // 항상 Supabase에서 최신 데이터 불러오기
+  pullFromSupabase(true);
 }
 
 function renderAll() {
@@ -2270,31 +2256,12 @@ function saveTodo2(){
   saveDBAndSync(); renderSideTodo(); renderTodos2();
 }
 // ================================================================
-// GOOGLE DRIVE 동기화 (Apps Script)
+// SUPABASE 동기화
 // ================================================================
-const GAS_LS = 'counselog_gas_config';
-
-function getGasConfig() {
-  try { return JSON.parse(localStorage.getItem(GAS_LS)||'{}'); } catch(e){ return {}; }
-}
-
-function loadGasConfig() {
-  const cfg = getGasConfig();
-  const el = document.getElementById('gasUrlInput');
-  if(el) el.value = cfg.url||'';
-}
-
-function saveGasConfig() {
-  const url = (document.getElementById('gasUrlInput').value||'').trim();
-  if(!url){ alert('Apps Script URL을 입력하세요.'); return; }
-  localStorage.setItem(GAS_LS, JSON.stringify({url}));
-  setGistStatus('✅ 설정이 저장되었습니다! 아래 "지금 업로드" 버튼을 눌러 데이터를 저장해주세요.', 'var(--c-existing)');
-  updateSaveInfo();
-}
-
-function getGistConfig() { return getGasConfig(); }
-function loadGistConfig() { loadGasConfig(); }
-function saveGistConfig() { saveGasConfig(); }
+const SUPA_URL = 'https://yuksupucspjrwslupzdh.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1a3N1cHVjc3BqcndzbHVwemRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODMyODksImV4cCI6MjA5Mzg1OTI4OX0.bGBOQvqElhBt8CkYQVaXN0IddhozhCFRMpu_oMQoFQU';
+const SUPA_TABLE = 'counselog_data';
+const SUPA_ROW_ID = 1;
 
 function setGistStatus(msg, color) {
   const el = document.getElementById('gistStatus');
@@ -2309,23 +2276,27 @@ function setSyncDot(state) {
   else dot.className='save-dot';
 }
 
-// ⬆️ Google Drive에 업로드 (GET 파라미터로 전송 — CORS 우회)
-async function pushToGas() {
-  const cfg = getGasConfig();
-  if(!cfg.url){ alert('먼저 데이터 관리 화면에서 Apps Script URL을 설정해 주세요.'); showView('data'); return; }
+// ⬆️ Supabase에 저장
+async function pushToSupabase() {
   setGistStatus('⏳ 저장 중...', 'var(--text2)');
   setSyncDot('syncing');
   try {
-    const encoded = encodeURIComponent(JSON.stringify(DB));
-    const res = await fetch(cfg.url + '?action=save&data=' + encoded);
-    const text = await res.text();
-    let json;
-    try { json = JSON.parse(text); } catch(e){ throw new Error('응답 오류: '+text.slice(0,100)); }
-    if(json.error) throw new Error(json.error);
+    // upsert (있으면 업데이트, 없으면 삽입)
+    const res = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ id: SUPA_ROW_ID, data: JSON.stringify(DB), updated_at: new Date().toISOString() })
+    });
+    if(!res.ok) { const t=await res.text(); throw new Error(t); }
     DB.savedAt = new Date().toISOString();
     saveDB();
     setSyncDot('ok');
-    setGistStatus('✅ Google Drive 저장 완료! ' + new Date().toLocaleTimeString('ko-KR'), 'var(--c-existing)');
+    setGistStatus('✅ 저장 완료! ' + new Date().toLocaleTimeString('ko-KR'), 'var(--c-existing)');
     updateSaveInfo();
   } catch(e) {
     setSyncDot('err');
@@ -2333,63 +2304,68 @@ async function pushToGas() {
   }
 }
 
-// ⬇️ Google Drive에서 불러오기
-async function pullFromGas(silent=false) {
-  const cfg = getGasConfig();
-  if(!cfg.url){
-    if(!silent){ alert('먼저 데이터 관리 화면에서 Apps Script URL을 설정해 주세요.'); showView('data'); }
-    insertSample();
-    renderAll(); return;
-  }
+// ⬇️ Supabase에서 불러오기
+async function pullFromSupabase(silent=false) {
   if(!silent) setGistStatus('⏳ 불러오는 중...', 'var(--text2)');
   setSyncDot('syncing');
   try {
-    const res = await fetch(cfg.url + '?action=load&t=' + Date.now());
-    const text = await res.text();
-    let parsed;
-    try { parsed = JSON.parse(text); } catch(e){ throw new Error('데이터 형식 오류: '+text.slice(0,50)); }
-    if(parsed.error) throw new Error(parsed.error);
-    // Google Drive에 실제 데이터가 있으면 사용
-    if(parsed.counselings || parsed.students || parsed.schedules) {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}?id=eq.${SUPA_ROW_ID}&select=data`, {
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`
+      }
+    });
+    if(!res.ok) { const t=await res.text(); throw new Error(t); }
+    const rows = await res.json();
+    if(rows && rows.length > 0 && rows[0].data) {
+      const parsed = JSON.parse(rows[0].data);
       DB = {
-        version: DB.version,
+        version: '3.0',
         counselings:[], students:[], schedules:[], templates:[], todos:[],
         categories:{academy:[],home:[]},
         ...parsed
       };
       if(!DB.todos) DB.todos=[];
       if(!DB.categories) DB.categories={academy:[],home:[]};
+      saveDB();
+      setSyncDot('ok');
+      if(!silent) setGistStatus('✅ 불러오기 완료! ' + new Date().toLocaleTimeString('ko-KR'), 'var(--c-existing)');
+    } else {
+      // Supabase에 데이터 없음 → 빈 상태로 시작
+      setSyncDot('ok');
+      if(!silent) setGistStatus('☁️ 저장된 데이터가 없습니다. 데이터 입력 후 저장해주세요.', 'var(--text2)');
     }
-    // Google Drive가 비어있어도 샘플 보여주지 않음
-    // GAS 설정 유지
-    localStorage.setItem(GAS_LS, JSON.stringify(cfg));
-    saveDB();
-    setSyncDot('ok');
-    if(!silent) setGistStatus('✅ 불러오기 완료! ' + new Date().toLocaleTimeString('ko-KR'), 'var(--c-existing)');
     renderAll();
   } catch(e) {
     setSyncDot('err');
     if(!silent) setGistStatus('❌ 불러오기 실패: '+e.message, 'var(--overdue)');
-    // 실패해도 샘플 보여주지 않고 현재 상태 유지
     renderAll();
   }
 }
 
-async function pushToGist() { await pushToGas(); }
-async function pullFromGist(silent=false) { await pullFromGas(silent); }
-
-// 데이터 저장 시 자동으로 Google Drive에도 저장
+// 데이터 저장 시 자동으로 Supabase에도 저장
 async function saveDBAndSync() {
   saveDB();
-  const cfg = getGasConfig();
-  if(cfg.url) {
-    try {
-      const encoded = encodeURIComponent(JSON.stringify(DB));
-      await fetch(cfg.url + '?action=save&data=' + encoded);
-      setSyncDot('ok');
-    } catch(e) { setSyncDot('err'); }
-  }
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/${SUPA_TABLE}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ id: SUPA_ROW_ID, data: JSON.stringify(DB), updated_at: new Date().toISOString() })
+    });
+    setSyncDot('ok');
+  } catch(e) { setSyncDot('err'); }
 }
+
+// 하위 호환
+async function pushToGas() { await pushToSupabase(); }
+async function pullFromGas(silent=false) { await pullFromSupabase(silent); }
+async function pushToGist() { await pushToSupabase(); }
+async function pullFromGist(silent=false) { await pullFromSupabase(silent); }
 
 // ================================================================
 // VIEW SWITCHING
