@@ -732,26 +732,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
   </div>
 
+
   <div class="data-section">
-    <div class="data-sec-title">☁️ GitHub Gist 자동 동기화</div>
+    <div class="data-sec-title">☁️ Google Drive 자동 동기화</div>
     <div class="data-sec-desc">
       PC·핸드폰 어디서든 같은 데이터를 사용할 수 있어요.<br>
-      <strong>Gist ID</strong>와 <strong>토큰</strong>을 한 번만 입력하면 앱을 열 때마다 자동으로 불러옵니다.
+      Apps Script URL을 한 번만 입력하면 앱을 열 때마다 자동으로 불러옵니다.
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-      <div class="form-group" style="margin:0">
-        <label class="form-label">Gist ID</label>
-        <input type="text" class="form-input" id="gistIdInput" placeholder="cdaab82730e6df9a590b7e9d0db94972" style="font-size:12px">
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="form-label">GitHub Token (ghp_xxx...)</label>
-        <input type="password" class="form-input" id="gistTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="font-size:12px">
-      </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="form-label">Apps Script 웹 앱 URL</label>
+      <input type="text" class="form-input" id="gasUrlInput" placeholder="https://script.google.com/macros/s/xxxxx/exec" style="font-size:12px">
     </div>
     <div class="data-actions">
-      <button class="btn-data primary" onclick="saveGistConfig()">💾 설정 저장</button>
-      <button class="btn-data secondary" onclick="pushToGist()">⬆️ 지금 업로드</button>
-      <button class="btn-data secondary" onclick="pullFromGist()">⬇️ 지금 불러오기</button>
+      <button class="btn-data primary" onclick="saveGasConfig()">💾 설정 저장</button>
+      <button class="btn-data secondary" onclick="pushToGas()">⬆️ 지금 업로드</button>
+      <button class="btn-data secondary" onclick="pullFromGas()">⬇️ 지금 불러오기</button>
     </div>
     <div id="gistStatus" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
   </div>
@@ -1082,15 +1077,16 @@ function updateSaveInfo() {
   const dot = document.getElementById('saveDot');
   const info = document.getElementById('saveInfo');
   const disp = document.getElementById('lastSaveDisplay');
-  const cfg = getGistConfig();
+  const cfg = getGasConfig();
+  const connected = !!cfg.url;
   if(DB.savedAt) {
     const d = new Date(DB.savedAt);
     const s = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    if(info) info.textContent = (cfg.id&&cfg.token?'☁️ Gist 연동됨 · ':'')+'마지막 저장: '+s;
+    if(info) info.textContent = (connected?'☁️ Google Drive 연동됨 · ':'')+'마지막 저장: '+s;
     if(disp) disp.textContent = s;
     if(dot) dot.className = 'save-dot ok';
   } else {
-    if(info) info.textContent = cfg.id&&cfg.token ? '☁️ Gist 연동됨 · 아직 저장 전' : '아직 저장하지 않았습니다';
+    if(info) info.textContent = connected ? '☁️ Google Drive 연동됨 · 아직 저장 전' : '아직 저장하지 않았습니다';
     if(disp) disp.textContent = '없음';
     if(dot) dot.className = 'save-dot warn';
   }
@@ -1103,11 +1099,11 @@ function init() {
   loadDB();
   const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth(); selDate = today();
   setupDropZone();
-  loadGistConfig();
-  // Gist 설정이 있으면 자동으로 불러오기
-  const cfg = getGistConfig();
-  if(cfg.id && cfg.token) {
-    pullFromGist(true); // true = 조용히 (알림 없이)
+  loadGasConfig();
+  // GAS 설정이 있으면 자동으로 불러오기
+  const cfg = getGasConfig();
+  if(cfg.url) {
+    pullFromGas(true);
   } else {
     insertSample();
     renderAll();
@@ -2273,30 +2269,32 @@ function saveTodo2(){
   saveDBAndSync(); renderSideTodo(); renderTodos2();
 }
 // ================================================================
-// GITHUB GIST 동기화
+// GOOGLE DRIVE 동기화 (Apps Script)
 // ================================================================
-const GIST_LS = 'counselog_gist_config';
+const GAS_LS = 'counselog_gas_config';
 
-function getGistConfig() {
-  try { return JSON.parse(localStorage.getItem(GIST_LS)||'{}'); } catch(e){ return {}; }
+function getGasConfig() {
+  try { return JSON.parse(localStorage.getItem(GAS_LS)||'{}'); } catch(e){ return {}; }
 }
 
-function loadGistConfig() {
-  const cfg = getGistConfig();
-  const gistId = document.getElementById('gistIdInput');
-  const gistToken = document.getElementById('gistTokenInput');
-  if(gistId) gistId.value = cfg.id||'';
-  if(gistToken) gistToken.value = cfg.token||'';
+function loadGasConfig() {
+  const cfg = getGasConfig();
+  const el = document.getElementById('gasUrlInput');
+  if(el) el.value = cfg.url||'';
 }
 
-function saveGistConfig() {
-  const id = (document.getElementById('gistIdInput').value||'').trim();
-  const token = (document.getElementById('gistTokenInput').value||'').trim();
-  if(!id||!token){ alert('Gist ID와 GitHub Token을 모두 입력하세요.'); return; }
-  localStorage.setItem(GIST_LS, JSON.stringify({id, token}));
+function saveGasConfig() {
+  const url = (document.getElementById('gasUrlInput').value||'').trim();
+  if(!url){ alert('Apps Script URL을 입력하세요.'); return; }
+  localStorage.setItem(GAS_LS, JSON.stringify({url}));
   setGistStatus('✅ 설정이 저장되었습니다! 이제 앱을 열 때마다 자동으로 데이터를 불러옵니다.', 'var(--c-existing)');
   updateSaveInfo();
 }
+
+// 이전 Gist 함수들 호환성 유지
+function getGistConfig() { return getGasConfig(); }
+function loadGistConfig() { loadGasConfig(); }
+function saveGistConfig() { saveGasConfig(); }
 
 function setGistStatus(msg, color) {
   const el = document.getElementById('gistStatus');
@@ -2304,7 +2302,6 @@ function setGistStatus(msg, color) {
 }
 
 function setSyncDot(state) {
-  // state: 'ok' | 'syncing' | 'err' | ''
   const dot = document.getElementById('saveDot');
   if(!dot) return;
   if(state==='ok') dot.className='save-dot ok';
@@ -2312,60 +2309,56 @@ function setSyncDot(state) {
   else dot.className='save-dot';
 }
 
-// ⬆️ Gist에 현재 데이터 업로드
-async function pushToGist() {
-  const cfg = getGistConfig();
-  if(!cfg.id||!cfg.token){
-    alert('먼저 데이터 관리 화면에서 Gist ID와 GitHub Token을 설정해 주세요.');
-    showView('data'); return;
-  }
-  setGistStatus('⏳ 업로드 중...', 'var(--text2)');
+// ⬆️ Google Drive에 업로드
+async function pushToGas() {
+  const cfg = getGasConfig();
+  if(!cfg.url){ alert('먼저 데이터 관리 화면에서 Apps Script URL을 설정해 주세요.'); showView('data'); return; }
+  setGistStatus('⏳ 저장 중...', 'var(--text2)');
   setSyncDot('syncing');
   try {
-    const payload = { files: { 'counselog_data.json': { content: JSON.stringify(DB) } } };
-    const res = await fetch(`https://api.github.com/gists/${cfg.id}`, {
-      method: 'PATCH',
-      headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    const res = await fetch(cfg.url, {
+      method: 'POST',
+      body: JSON.stringify(DB)
     });
-    if(!res.ok) throw new Error('업로드 실패 ('+res.status+')');
+    if(!res.ok) throw new Error('저장 실패 ('+res.status+')');
+    const json = await res.json();
+    if(json.error) throw new Error(json.error);
     DB.savedAt = new Date().toISOString();
     saveDB();
     setSyncDot('ok');
-    setGistStatus('✅ 업로드 완료! ' + new Date().toLocaleTimeString('ko-KR'), 'var(--c-existing)');
+    setGistStatus('✅ Google Drive 저장 완료! ' + new Date().toLocaleTimeString('ko-KR'), 'var(--c-existing)');
     updateSaveInfo();
   } catch(e) {
     setSyncDot('err');
-    setGistStatus('❌ 업로드 실패: '+e.message, 'var(--overdue)');
+    setGistStatus('❌ 저장 실패: '+e.message, 'var(--overdue)');
   }
 }
 
-// ⬇️ Gist에서 데이터 불러오기
-async function pullFromGist(silent=false) {
-  const cfg = getGistConfig();
-  if(!cfg.id||!cfg.token){
-    if(!silent) alert('먼저 데이터 관리 화면에서 Gist ID와 GitHub Token을 설정해 주세요.');
-    if(!silent) showView('data');
+// ⬇️ Google Drive에서 불러오기
+async function pullFromGas(silent=false) {
+  const cfg = getGasConfig();
+  if(!cfg.url){
+    if(!silent) { alert('먼저 데이터 관리 화면에서 Apps Script URL을 설정해 주세요.'); showView('data'); }
     insertSample(); renderAll(); return;
   }
   if(!silent) setGistStatus('⏳ 불러오는 중...', 'var(--text2)');
   setSyncDot('syncing');
   try {
-    const res = await fetch(`https://api.github.com/gists/${cfg.id}`, {
-      headers: { 'Authorization': `token ${cfg.token}` }
-    });
+    const res = await fetch(cfg.url+'?t='+Date.now());
     if(!res.ok) throw new Error('불러오기 실패 ('+res.status+')');
-    const json = await res.json();
-    const content = json.files?.['counselog_data.json']?.content;
-    if(!content) throw new Error('데이터 파일을 찾을 수 없습니다');
-    const parsed = JSON.parse(content);
-    // 빈 데이터({})면 샘플 삽입
+    const text = await res.text();
+    const parsed = JSON.parse(text);
+    if(parsed.error) throw new Error(parsed.error);
+    // 빈 데이터면 샘플 삽입
     if(!parsed.counselings && !parsed.students && !parsed.schedules) {
       insertSample();
     } else {
       DB = { ...DB, ...parsed };
       if(!DB.todos) DB.todos = [];
       if(!DB.categories) DB.categories = { academy:[], home:[] };
+      // GAS config 유지
+      const gasCfg = getGasConfig();
+      localStorage.setItem(GAS_LS, JSON.stringify(gasCfg));
       saveDB();
     }
     setSyncDot('ok');
@@ -2373,25 +2366,22 @@ async function pullFromGist(silent=false) {
     renderAll();
   } catch(e) {
     setSyncDot('err');
-    if(!silent) setGistStatus('❌ 불러오기 실패: '+e.message, 'var(--overdue)');
-    // 실패해도 로컬 데이터로 계속 사용
-    insertSample();
-    renderAll();
+    if(!silent) setGistStatus('❌ 불러오기 실패: '+e.message+' (URL을 확인하세요)', 'var(--overdue)');
+    insertSample(); renderAll();
   }
 }
 
-// saveDB 할 때 자동으로 Gist에도 저장 (백그라운드)
+// 이전 Gist 함수 호환
+async function pushToGist() { await pushToGas(); }
+async function pullFromGist(silent=false) { await pullFromGas(silent); }
+
+// 데이터 저장 시 자동으로 Google Drive에도 저장
 async function saveDBAndSync() {
   saveDB();
-  const cfg = getGistConfig();
-  if(cfg.id && cfg.token) {
+  const cfg = getGasConfig();
+  if(cfg.url) {
     try {
-      const payload = { files: { 'counselog_data.json': { content: JSON.stringify(DB) } } };
-      await fetch(`https://api.github.com/gists/${cfg.id}`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      await fetch(cfg.url, { method: 'POST', body: JSON.stringify(DB) });
       setSyncDot('ok');
     } catch(e) { setSyncDot('err'); }
   }
