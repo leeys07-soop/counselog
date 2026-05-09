@@ -2287,11 +2287,10 @@ function saveGasConfig() {
   const url = (document.getElementById('gasUrlInput').value||'').trim();
   if(!url){ alert('Apps Script URL을 입력하세요.'); return; }
   localStorage.setItem(GAS_LS, JSON.stringify({url}));
-  setGistStatus('✅ 설정이 저장되었습니다! 이제 앱을 열 때마다 자동으로 데이터를 불러옵니다.', 'var(--c-existing)');
+  setGistStatus('✅ 설정이 저장되었습니다! 아래 "지금 업로드" 버튼을 눌러 데이터를 저장해주세요.', 'var(--c-existing)');
   updateSaveInfo();
 }
 
-// 이전 Gist 함수들 호환성 유지
 function getGistConfig() { return getGasConfig(); }
 function loadGistConfig() { loadGasConfig(); }
 function saveGistConfig() { saveGasConfig(); }
@@ -2309,19 +2308,18 @@ function setSyncDot(state) {
   else dot.className='save-dot';
 }
 
-// ⬆️ Google Drive에 업로드
+// ⬆️ Google Drive에 업로드 (GET 파라미터로 전송 — CORS 우회)
 async function pushToGas() {
   const cfg = getGasConfig();
   if(!cfg.url){ alert('먼저 데이터 관리 화면에서 Apps Script URL을 설정해 주세요.'); showView('data'); return; }
   setGistStatus('⏳ 저장 중...', 'var(--text2)');
   setSyncDot('syncing');
   try {
-    const res = await fetch(cfg.url, {
-      method: 'POST',
-      body: JSON.stringify(DB)
-    });
-    if(!res.ok) throw new Error('저장 실패 ('+res.status+')');
-    const json = await res.json();
+    const encoded = encodeURIComponent(JSON.stringify(DB));
+    const res = await fetch(cfg.url + '?action=save&data=' + encoded);
+    const text = await res.text();
+    let json;
+    try { json = JSON.parse(text); } catch(e){ throw new Error('응답 오류: '+text.slice(0,100)); }
     if(json.error) throw new Error(json.error);
     DB.savedAt = new Date().toISOString();
     saveDB();
@@ -2338,27 +2336,28 @@ async function pushToGas() {
 async function pullFromGas(silent=false) {
   const cfg = getGasConfig();
   if(!cfg.url){
-    if(!silent) { alert('먼저 데이터 관리 화면에서 Apps Script URL을 설정해 주세요.'); showView('data'); }
-    insertSample(); renderAll(); return;
+    if(!silent){ alert('먼저 데이터 관리 화면에서 Apps Script URL을 설정해 주세요.'); showView('data'); }
+    // URL 없으면 로컬 데이터 사용, 로컬도 없으면 샘플
+    if(!DB.counselings || !DB.counselings.length) insertSample();
+    renderAll(); return;
   }
   if(!silent) setGistStatus('⏳ 불러오는 중...', 'var(--text2)');
   setSyncDot('syncing');
   try {
-    const res = await fetch(cfg.url+'?t='+Date.now());
-    if(!res.ok) throw new Error('불러오기 실패 ('+res.status+')');
+    const res = await fetch(cfg.url + '?action=load&t=' + Date.now());
     const text = await res.text();
-    const parsed = JSON.parse(text);
+    let parsed;
+    try { parsed = JSON.parse(text); } catch(e){ throw new Error('데이터 형식 오류'); }
     if(parsed.error) throw new Error(parsed.error);
-    // 빈 데이터면 샘플 삽입
+    // 빈 데이터면 로컬 확인 후 샘플
     if(!parsed.counselings && !parsed.students && !parsed.schedules) {
-      insertSample();
+      if(!DB.counselings || !DB.counselings.length) insertSample();
     } else {
       DB = { ...DB, ...parsed };
       if(!DB.todos) DB.todos = [];
       if(!DB.categories) DB.categories = { academy:[], home:[] };
-      // GAS config 유지
-      const gasCfg = getGasConfig();
-      localStorage.setItem(GAS_LS, JSON.stringify(gasCfg));
+      // GAS 설정 유지
+      localStorage.setItem(GAS_LS, JSON.stringify(cfg));
       saveDB();
     }
     setSyncDot('ok');
@@ -2366,12 +2365,12 @@ async function pullFromGas(silent=false) {
     renderAll();
   } catch(e) {
     setSyncDot('err');
-    if(!silent) setGistStatus('❌ 불러오기 실패: '+e.message+' (URL을 확인하세요)', 'var(--overdue)');
-    insertSample(); renderAll();
+    if(!silent) setGistStatus('❌ 불러오기 실패: '+e.message, 'var(--overdue)');
+    // 실패시 로컬 데이터 사용 (샘플 덮어쓰기 안 함)
+    renderAll();
   }
 }
 
-// 이전 Gist 함수 호환
 async function pushToGist() { await pushToGas(); }
 async function pullFromGist(silent=false) { await pullFromGas(silent); }
 
@@ -2381,7 +2380,8 @@ async function saveDBAndSync() {
   const cfg = getGasConfig();
   if(cfg.url) {
     try {
-      await fetch(cfg.url, { method: 'POST', body: JSON.stringify(DB) });
+      const encoded = encodeURIComponent(JSON.stringify(DB));
+      await fetch(cfg.url + '?action=save&data=' + encoded);
       setSyncDot('ok');
     } catch(e) { setSyncDot('err'); }
   }
