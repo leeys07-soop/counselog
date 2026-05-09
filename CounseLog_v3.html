@@ -1,0 +1,2483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CounseLog v3</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+:root{
+  --bg:#F5F3EE;--surface:#FFF;--surface2:#F0EDE6;--surface3:#E8E4DC;
+  --primary:#2B5CE6;--primary-light:#EEF2FE;--primary-dark:#1A3DB5;
+  --c-new:#2B5CE6;--c-new-bg:#EEF2FE;
+  --c-existing:#0DA36B;--c-existing-bg:#E8F8F1;
+  --c-trial:#7C3AED;--c-trial-bg:#F3EFFE;
+  --c-absent:#E03E3E;--c-absent-bg:#FEF0F0;
+  --c-makeup:#E07B2A;--c-makeup-bg:#FEF3E7;
+  --c-event:#1A7FBF;--c-event-bg:#E6F4FB;
+  --c-notice:#5F6B7A;--c-notice-bg:#EFF1F3;
+  --c-feedback:#D4267E;--c-feedback-bg:#FDE8F3;
+  --overdue:#E03E3E;--overdue-bg:#FEF0F0;
+  --text:#1A1A2E;--text2:#6B6B80;--text3:#A0A0B0;
+  --border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.15);
+  --shadow:0 2px 12px rgba(0,0,0,0.08);--shadow-lg:0 8px 32px rgba(0,0,0,0.14);
+  --r:12px;--rs:8px;--font:'Noto Sans KR',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:260px 1fr;grid-template-rows:auto 1fr;min-height:100vh;max-width:1280px;margin:0 auto}
+/* ── TOPBAR ── */
+.topbar{grid-column:1/-1;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;height:52px;position:sticky;top:0;z-index:300;gap:10px}
+.logo{font-family:'Nanum Gothic',sans-serif;font-weight:800;font-size:16px;color:var(--primary);display:flex;align-items:center;gap:7px;flex-shrink:0}
+.logo-icon{width:24px;height:24px;background:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+.topbar-center{flex:1;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3);margin-left:12px}
+.save-info{display:flex;align-items:center;gap:5px}
+.save-dot{width:6px;height:6px;border-radius:50%;background:#ccc;flex-shrink:0}
+.save-dot.ok{background:var(--c-existing)}
+.save-dot.warn{background:var(--overdue)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:7px}
+.overdue-pill{display:none;align-items:center;gap:5px;background:var(--overdue-bg);border:1px solid rgba(224,62,62,.25);color:var(--overdue);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer}
+.overdue-pill.show{display:flex}
+.feedback-pill{display:none;align-items:center;gap:5px;background:var(--c-feedback-bg);border:1px solid rgba(212,38,126,.25);color:var(--c-feedback);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer}
+.feedback-pill.show{display:flex}
+.pill-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.btn-top{background:none;border:1px solid var(--border2);color:var(--text2);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background .12s}
+.btn-top:hover{background:var(--surface2)}
+.btn-top.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-top.primary:hover{background:var(--primary-dark)}
+/* ── SIDEBAR ── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:0;position:sticky;top:52px;height:calc(100vh - 52px);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-top{padding:14px 0 0;overflow-y:auto;flex-shrink:0;max-height:55%}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:13px;color:var(--text2);border-left:3px solid transparent;transition:all .12s;user-select:none}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--primary-light);color:var(--primary);border-left-color:var(--primary);font-weight:700}
+.nav-icon{font-size:14px;width:18px;text-align:center}
+.nav-divider{height:1px;background:var(--border);margin:8px 12px}
+.sidebar-stats{padding:9px 12px;margin:5px 8px;background:var(--surface2);border-radius:var(--rs)}
+.stat-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px}
+.stat-label{color:var(--text2)}
+.stat-val{font-weight:700;color:var(--text)}
+.stat-val.blue{color:var(--c-new)}
+.stat-val.green{color:var(--c-existing)}
+.stat-val.red{color:var(--overdue)}
+/* ── LEGEND ── */
+.legend{padding:8px 12px;margin:0 8px 8px;display:flex;flex-direction:column;gap:4px}
+.legend-title{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.05em;margin-bottom:2px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+/* ── MAIN ── */
+.main{padding:18px;overflow-y:auto}
+.view{display:none}.view.active{display:block}
+/* ── CALENDAR ── */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-title{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.cal-nav{display:flex;align-items:center;gap:6px}
+.cal-btn{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);width:28px;height:28px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:all .12s}
+.cal-btn:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary)}
+.btn-today{background:none;border:1px solid var(--border2);font-size:11px;font-family:var(--font);padding:3px 10px;border-radius:6px;cursor:pointer;color:var(--text2)}
+.btn-today:hover{background:var(--primary-light);color:var(--primary)}
+.cal-grid{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow)}
+.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface2);border-bottom:1px solid var(--border)}
+.cal-dow{text-align:center;padding:6px 0;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.04em}
+.cal-dow:first-child{color:#E03E3E}.cal-dow:last-child{color:var(--primary)}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{min-height:96px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:4px;cursor:pointer;transition:background .1s;overflow:hidden;display:flex;flex-direction:column}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell:hover{background:#faf8f5}
+.cal-cell.today .cal-dn{background:var(--primary);color:#fff;border-radius:50%}
+.cal-cell.selected{background:var(--primary-light)}
+.cal-cell.other-month{opacity:.28}
+.cal-cell.sun .cal-dn{color:#E03E3E}
+.cal-cell.sat .cal-dn{color:var(--primary)}
+.cal-dn{font-size:11px;font-weight:700;width:20px;height:20px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;flex-shrink:0}
+.cal-chips{display:flex;flex-direction:column;gap:2px;overflow:hidden;flex:1}
+.cal-chip{font-size:10px;padding:1px 5px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;font-weight:500;flex-shrink:0}
+.cal-chip.new{background:var(--c-new-bg);color:var(--c-new)}
+.cal-chip.existing{background:var(--c-existing-bg);color:var(--c-existing)}
+.cal-chip.trial{background:var(--c-trial-bg);color:var(--c-trial)}
+.cal-chip.absent{background:var(--c-absent-bg);color:var(--c-absent)}
+.cal-chip.makeup{background:var(--c-makeup-bg);color:var(--c-makeup)}
+.cal-chip.event{background:var(--c-event-bg);color:var(--c-event)}
+.cal-chip.notice{background:var(--c-notice-bg);color:var(--c-notice)}
+.cal-chip.feedback{background:var(--c-feedback-bg);color:var(--c-feedback)}
+.cal-chip.more{background:var(--surface3);color:var(--text2);font-size:9px}
+/* ── DAILY PANEL ── */
+.daily-panel{margin-top:14px;background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
+.daily-header{padding:10px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)}
+.daily-title{font-size:13px;font-weight:700}
+.daily-actions{display:flex;gap:6px}
+.btn-add{background:var(--primary);color:#fff;border:none;border-radius:var(--rs);padding:5px 12px;font-size:11px;font-weight:700;font-family:var(--font);cursor:pointer;transition:background .12s;white-space:nowrap}
+.btn-add:hover{background:var(--primary-dark)}
+.btn-add-sched{background:none;border:1px solid var(--border2);color:var(--text2);border-radius:var(--rs);padding:5px 12px;font-size:11px;font-weight:700;font-family:var(--font);cursor:pointer;white-space:nowrap}
+.btn-add-sched:hover{background:var(--surface2)}
+.daily-list{padding:9px;display:flex;flex-direction:column;gap:6px}
+.daily-empty{text-align:center;padding:24px;color:var(--text3);font-size:12px}
+/* ── CARDS ── */
+.item-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;cursor:pointer;transition:all .12s;display:flex;gap:9px;align-items:flex-start}
+.item-card:hover{border-color:var(--primary);box-shadow:0 0 0 3px rgba(43,92,230,.07);transform:translateY(-1px)}
+.item-card.overdue-card{border-left:3px solid var(--overdue)}
+.item-card.feedback-card{border-left:3px solid var(--c-feedback)}
+.card-badge{flex-shrink:0;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap;margin-top:1px}
+.card-body{flex:1;min-width:0}
+.card-name{font-size:13px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.flag{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:700}
+.flag-overdue{background:var(--overdue-bg);color:var(--overdue)}
+.flag-feedback{background:var(--c-feedback-bg);color:var(--c-feedback)}
+.card-meta{font-size:11px;color:var(--text2);display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.card-preview{font-size:11px;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px}
+.result-badge{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:700}
+.rb-enrolled{background:var(--c-existing-bg);color:var(--c-existing)}
+.rb-pending{background:var(--c-makeup-bg);color:var(--c-makeup)}
+.rb-none{background:#F0F0F5;color:var(--text3)}
+.mini-checks{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
+.mini-check{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600}
+.mc-done{background:var(--c-existing-bg);color:var(--c-existing)}
+.mc-undone{background:var(--c-makeup-bg);color:var(--c-makeup)}
+/* Schedule card variant */
+.sched-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:9px 12px;cursor:pointer;transition:all .12s;display:flex;gap:8px;align-items:flex-start}
+.sched-card:hover{border-color:var(--primary);box-shadow:0 0 0 3px rgba(43,92,230,.07)}
+.sched-bar{width:3px;border-radius:2px;flex-shrink:0;align-self:stretch;min-height:32px}
+.sched-body{flex:1;min-width:0}
+.sched-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.sched-meta{font-size:11px;color:var(--text2)}
+/* ── LIST VIEW ── */
+.list-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.search-input{flex:1;min-width:150px;padding:7px 11px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none}
+.search-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(43,92,230,.1)}
+.filter-tabs{display:flex;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);overflow:hidden}
+.ftab{padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);border:none;background:none;font-family:var(--font);transition:all .12s}
+.ftab.active{background:var(--primary);color:#fff}
+.ftab:not(.active):hover{background:var(--surface2)}
+.sort-sel{padding:6px 10px;border:1px solid var(--border2);border-radius:var(--rs);font-size:11px;font-family:var(--font);background:var(--surface);color:var(--text2);cursor:pointer;outline:none}
+.cards-list{display:flex;flex-direction:column;gap:6px}
+.list-empty{text-align:center;padding:50px 20px;color:var(--text3);font-size:13px}
+.empty-icon{font-size:34px;margin-bottom:9px}
+/* ── STUDENT GRID ── */
+.student-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:9px}
+.student-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;cursor:pointer;transition:all .12s}
+.student-card:hover{border-color:var(--primary);box-shadow:0 0 0 3px rgba(43,92,230,.07);transform:translateY(-1px)}
+.student-top{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.s-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.av-new{background:var(--c-new-bg);color:var(--c-new)}
+.av-existing{background:var(--c-existing-bg);color:var(--c-existing)}
+.s-name{font-size:13px;font-weight:700}
+.s-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.s-fields{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}
+.sf{font-size:11px;color:var(--text2);display:flex;gap:3px}
+.sf-l{color:var(--text3);flex-shrink:0;min-width:32px}
+.sf-v{color:var(--text);font-weight:500}
+.status-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-block}
+.sb-active{background:var(--c-existing-bg);color:var(--c-existing)}
+.sb-inactive{background:#F0F0F5;color:var(--text3)}
+.sb-new-reg{background:var(--c-new-bg);color:var(--c-new)}
+.sb-pending{background:var(--c-makeup-bg);color:var(--c-makeup)}
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:14px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:mIn .16s ease}
+.modal.wide{max-width:660px}
+@keyframes mIn{from{transform:scale(.96) translateY(8px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.modal-header{padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-size:14px;font-weight:700}
+.modal-close{width:26px;height:26px;border:none;background:none;cursor:pointer;font-size:16px;color:var(--text2);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--surface2)}
+.modal-body{padding:14px 18px}
+.modal-footer{padding:10px 18px 14px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border)}
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px}
+.form-group{display:flex;flex-direction:column;gap:3px;margin-bottom:9px}
+.form-label{font-size:11px;font-weight:700;color:var(--text2)}
+.req{color:var(--overdue)}
+.form-input,.form-textarea,.form-select{padding:7px 10px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:border .12s;width:100%}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(43,92,230,.09)}
+.form-textarea{resize:vertical;min-height:65px;line-height:1.6}
+.type-toggle{display:flex;border:1px solid var(--border2);border-radius:var(--rs);overflow:hidden}
+.type-btn{flex:1;padding:7px;border:none;background:none;font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;color:var(--text2)}
+.type-btn.a-new{background:var(--c-new);color:#fff}
+.type-btn.a-existing{background:var(--c-existing);color:#fff}
+.type-btn.a-trial{background:var(--c-trial);color:#fff}
+.btn-cancel{background:var(--surface2);border:1px solid var(--border2);color:var(--text2);font-family:var(--font);font-size:12px;font-weight:700;padding:7px 16px;border-radius:var(--rs);cursor:pointer}
+.btn-cancel:hover{background:var(--surface3)}
+.btn-save{background:var(--primary);border:none;color:#fff;font-family:var(--font);font-size:12px;font-weight:700;padding:7px 20px;border-radius:var(--rs);cursor:pointer}
+.btn-save:hover{background:var(--primary-dark)}
+.btn-del{background:var(--overdue-bg);border:1px solid rgba(224,62,62,.2);color:var(--overdue);font-family:var(--font);font-size:12px;font-weight:700;padding:7px 12px;border-radius:var(--rs);cursor:pointer;margin-right:auto}
+.btn-del:hover{background:#f9d0d0}
+.sec-divider{height:1px;background:var(--border);margin:10px 0}
+.sec-label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.04em;margin-bottom:7px}
+/* ── CHECKLIST ── */
+.checklist-area{background:var(--surface2);border-radius:var(--rs);padding:9px 11px}
+.check-item{display:flex;align-items:flex-start;gap:7px;padding:4px 0;border-bottom:1px solid var(--border)}
+.check-item:last-child{border:none}
+.check-cb{width:15px;height:15px;margin-top:2px;accent-color:var(--c-existing);cursor:pointer;flex-shrink:0}
+.check-lbl{font-size:12px;color:var(--text);line-height:1.4;cursor:pointer}
+.check-lbl.done{text-decoration:line-through;color:var(--text3)}
+.add-check-row{display:flex;gap:5px;margin-top:7px}
+.add-check-inp{flex:1;padding:5px 9px;border:1px solid var(--border2);border-radius:6px;font-size:11px;font-family:var(--font);outline:none;background:var(--surface)}
+.add-check-inp:focus{border-color:var(--primary)}
+.btn-add-check{background:var(--primary-light);border:1px solid rgba(43,92,230,.2);color:var(--primary);font-size:11px;font-weight:700;font-family:var(--font);padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.btn-add-check:hover{background:var(--primary);color:#fff}
+/* ── FEEDBACK FLAG ── */
+.feedback-toggle{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--c-feedback-bg);border-radius:var(--rs);cursor:pointer;border:1px solid rgba(212,38,126,.15)}
+.feedback-toggle input[type=checkbox]{width:15px;height:15px;accent-color:var(--c-feedback);cursor:pointer}
+.feedback-toggle label{font-size:12px;font-weight:700;color:var(--c-feedback);cursor:pointer}
+/* ── TEMPLATE MGMT ── */
+.tmpl-list{display:flex;flex-direction:column;gap:3px;margin-bottom:7px}
+.tmpl-item{display:flex;align-items:center;gap:5px;padding:5px 7px;background:var(--surface2);border-radius:5px;font-size:12px}
+.tmpl-item span{flex:1}
+.tmpl-del{border:none;background:none;cursor:pointer;color:var(--text3);font-size:14px;padding:0 2px}
+.tmpl-del:hover{color:var(--overdue)}
+/* ── DETAIL TABS ── */
+.detail-tabs{display:flex;border-bottom:1px solid var(--border);margin:-14px -18px 14px;padding:0 18px}
+.dtab{padding:9px 14px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s}
+.dtab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+/* ── TIMELINE ── */
+.timeline{display:flex;flex-direction:column;position:relative}
+.timeline::before{content:'';position:absolute;left:9px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-item{display:flex;gap:13px;padding-bottom:13px;position:relative}
+.tl-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--surface);flex-shrink:0;margin-top:2px;position:relative;z-index:1}
+.tl-dot.new{background:var(--c-new)}.tl-dot.existing{background:var(--c-existing)}.tl-dot.trial{background:var(--c-trial)}
+.tl-content{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 11px;cursor:pointer;transition:all .12s}
+.tl-content:hover{border-color:var(--primary)}
+.tl-date{font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:700}
+.tl-text{font-size:12px;color:var(--text2);line-height:1.5}
+/* ── STUDENT INFO ── */
+.s-header-card{background:var(--surface2);border-radius:var(--rs);padding:12px 14px;margin-bottom:13px;display:flex;align-items:center;gap:11px}
+.s-name-big{font-size:14px;font-weight:700}
+.s-meta-sm{font-size:11px;color:var(--text2);margin-top:2px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;margin-bottom:11px}
+.info-row{font-size:12px;display:flex;gap:5px}
+.info-l{color:var(--text3);min-width:46px;flex-shrink:0}
+.info-v{color:var(--text);font-weight:500}
+/* ── DATA MGMT VIEW ── */
+.data-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.data-sec-title{font-size:14px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.data-sec-desc{font-size:12px;color:var(--text2);margin-bottom:13px;line-height:1.6}
+.data-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-data{padding:8px 16px;border-radius:var(--rs);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:6px}
+.btn-data.primary{background:var(--primary);border:none;color:#fff}
+.btn-data.primary:hover{background:var(--primary-dark)}
+.btn-data.secondary{background:none;border:1px solid var(--border2);color:var(--text2)}
+.btn-data.secondary:hover{background:var(--surface2)}
+.btn-data.danger{background:var(--overdue-bg);border:1px solid rgba(224,62,62,.2);color:var(--overdue)}
+.btn-data.danger:hover{background:#f9d0d0}
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;color:var(--text2);font-size:12px;transition:all .15s;margin-top:10px;cursor:pointer}
+.drop-zone.drag-over{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+.gdrive-section{background:#EAF4FE;border:1px solid rgba(26,127,191,.2);border-radius:var(--r);padding:14px 16px;margin-top:10px}
+.gdrive-title{font-size:13px;font-weight:700;color:var(--c-event);margin-bottom:4px}
+.gdrive-desc{font-size:11px;color:#1A5F8A;margin-bottom:11px;line-height:1.6}
+.gdrive-status{font-size:11px;padding:4px 10px;border-radius:5px;font-weight:700;display:inline-block;margin-bottom:8px}
+.gs-connected{background:#DCFCE7;color:#166534}
+.gs-disconnected{background:#F0F0F5;color:var(--text3)}
+.view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.view-title{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.view-subtitle{font-size:12px;color:var(--text2);margin-top:2px}
+/* ── OVERDUE VIEW ── */
+.ov-sec-title{font-size:12px;font-weight:700;color:var(--overdue);margin:0 0 8px;display:flex;align-items:center;gap:5px}
+/* ── AUTOCOMPLETE ── */
+.ac-box{position:absolute;z-index:100;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);box-shadow:var(--shadow);width:100%;top:2px;overflow:hidden}
+.ac-item{padding:6px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border)}
+.ac-item:last-child{border:none}
+.ac-item:hover{background:var(--surface2)}
+/* ── SIDEBAR TODO ── */
+.sidebar-todo{padding:0;margin:0;border-top:1px solid var(--border);flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.stodo-header{display:flex;align-items:center;justify-content:space-between;padding:9px 14px 7px}
+.stodo-title{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.stodo-badge{background:var(--overdue);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;min-width:16px;text-align:center;line-height:1.4}
+.stodo-badge.all-done{background:var(--c-existing)}
+.stodo-prog{padding:0 12px 6px}
+.stodo-prog-bar{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.stodo-prog-fill{height:100%;background:var(--c-existing);border-radius:2px;transition:width .3s}
+.stodo-prog-txt{font-size:10px;color:var(--text3);display:flex;justify-content:space-between}
+.stodo-list{flex:1;overflow-y:auto;padding:4px 8px;display:flex;flex-direction:column;gap:3px;max-height:260px}
+.stodo-item{display:flex;align-items:flex-start;gap:7px;padding:6px 8px;border-radius:6px;border:1px solid transparent;transition:all .1s;position:relative}
+.stodo-item:hover{background:var(--surface2);border-color:var(--border)}
+.stodo-item.s-done{opacity:.5}
+.stodo-cb{width:14px;height:14px;margin-top:2px;flex-shrink:0;accent-color:var(--primary);cursor:pointer}
+.stodo-body{flex:1;min-width:0}
+.stodo-text{font-size:11px;color:var(--text);line-height:1.4;word-break:break-all}
+.stodo-text.s-done-txt{text-decoration:line-through;color:var(--text3)}
+.stodo-due{font-size:10px;color:var(--text3);margin-top:1px}
+.stodo-due.s-ov{color:var(--overdue);font-weight:700}
+.stodo-due.s-today{color:var(--c-makeup);font-weight:700}
+.stodo-del{border:none;background:none;cursor:pointer;font-size:12px;color:var(--text3);opacity:0;line-height:1;flex-shrink:0;margin-top:1px}
+.stodo-item:hover .stodo-del{opacity:1}
+.stodo-del:hover{color:var(--overdue)}
+.stodo-add-wrap{padding:6px 8px 8px;border-top:1px solid var(--border)}
+.stodo-inp-row{display:flex;gap:4px}
+.stodo-inp{flex:1;padding:5px 8px;border:1px solid var(--border2);border-radius:6px;font-size:11px;font-family:var(--font);outline:none;background:var(--surface);color:var(--text)}
+.stodo-inp:focus{border-color:var(--primary)}
+.stodo-btn-add{background:var(--primary);color:#fff;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;font-family:var(--font);cursor:pointer;white-space:nowrap}
+.stodo-btn-add:hover{background:var(--primary-dark)}
+.stodo-meta-row{display:flex;gap:4px;margin-top:4px}
+.stodo-sel,.stodo-date{flex:1;padding:4px 6px;border:1px solid var(--border2);border-radius:5px;font-size:10px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none}
+.stodo-sel:focus,.stodo-date:focus{border-color:var(--primary)}
+.stodo-empty{text-align:center;padding:14px 8px;color:var(--text3);font-size:11px}
+.stodo-filter-row{display:flex;padding:0 8px 4px;gap:3px}
+.stodo-ftab{flex:1;padding:3px 0;font-size:10px;font-weight:700;cursor:pointer;color:var(--text3);border:none;background:none;font-family:var(--font);text-align:center;border-bottom:2px solid transparent;transition:all .1s}
+.stodo-ftab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.cal-todo-wrap{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+.todo-panel{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;position:sticky;top:70px}
+.todo-header{padding:11px 14px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.todo-header-left{display:flex;align-items:center;gap:7px}
+.todo-title{font-size:13px;font-weight:700}
+.todo-badge{background:var(--overdue);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.todo-badge.done-all{background:var(--c-existing)}
+.btn-add-todo{background:var(--primary);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;font-family:var(--font);cursor:pointer}
+.btn-add-todo:hover{background:var(--primary-dark)}
+.todo-filters{display:flex;gap:0;padding:8px 10px;border-bottom:1px solid var(--border);background:var(--surface)}
+.todo-ftab{flex:1;padding:4px 0;font-size:10px;font-weight:700;cursor:pointer;color:var(--text3);border:none;background:none;font-family:var(--font);text-align:center;border-bottom:2px solid transparent;transition:all .12s}
+.todo-ftab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.todo-list{padding:8px;display:flex;flex-direction:column;gap:4px;max-height:480px;overflow-y:auto}
+.todo-empty{text-align:center;padding:20px;color:var(--text3);font-size:12px}
+.todo-item{display:flex;align-items:flex-start;gap:8px;padding:8px 9px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all .12s;position:relative}
+.todo-item:hover{border-color:var(--primary);background:var(--primary-light)}
+.todo-item.done-item{opacity:.55}
+.todo-cb{width:15px;height:15px;margin-top:2px;flex-shrink:0;accent-color:var(--primary);cursor:pointer}
+.todo-body{flex:1;min-width:0}
+.todo-text{font-size:12px;color:var(--text);line-height:1.4;word-break:break-all}
+.todo-text.done-text{text-decoration:line-through;color:var(--text3)}
+.todo-meta{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;align-items:center}
+.todo-cat{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600}
+.tc-admin{background:#EEF2FE;color:#2B5CE6}
+.tc-payment{background:#E8F8F1;color:#0DA36B}
+.tc-class{background:#F3EFFE;color:#7C3AED}
+.tc-parent{background:#FEF3E7;color:#E07B2A}
+.tc-etc{background:#EFF1F3;color:#5F6B7A}
+.todo-due{font-size:10px;color:var(--text3)}
+.todo-due.overdue{color:var(--overdue);font-weight:700}
+.todo-due.today-due{color:var(--c-makeup);font-weight:700}
+.todo-del{position:absolute;top:6px;right:6px;background:none;border:none;cursor:pointer;font-size:13px;color:var(--text3);opacity:0;transition:opacity .12s;line-height:1}
+.todo-item:hover .todo-del{opacity:1}
+.todo-del:hover{color:var(--overdue)}
+/* TODO progress bar */
+.todo-progress{padding:8px 10px 0;border-bottom:1px solid var(--border)}
+.todo-prog-bar{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-bottom:6px}
+.todo-prog-fill{height:100%;background:var(--c-existing);border-radius:2px;transition:width .3s}
+.todo-prog-text{font-size:10px;color:var(--text3);padding-bottom:6px;display:flex;justify-content:space-between}
+/* TODO add inline form */
+.todo-add-form{padding:8px 10px;border-top:1px solid var(--border);background:var(--surface2)}
+.todo-add-inp{width:100%;padding:6px 9px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12px;font-family:var(--font);outline:none;margin-bottom:6px;background:var(--surface)}
+.todo-add-inp:focus{border-color:var(--primary)}
+.todo-add-row{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px}
+.todo-add-sel,.todo-add-date{padding:5px 7px;border:1px solid var(--border2);border-radius:6px;font-size:11px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none;width:100%}
+.todo-add-sel:focus,.todo-add-date:focus{border-color:var(--primary)}
+.todo-add-btns{display:flex;gap:5px;justify-content:flex-end}
+.btn-todo-cancel{background:none;border:1px solid var(--border2);color:var(--text2);font-size:11px;font-weight:700;font-family:var(--font);padding:5px 10px;border-radius:6px;cursor:pointer}
+.btn-todo-save{background:var(--primary);border:none;color:#fff;font-size:11px;font-weight:700;font-family:var(--font);padding:5px 12px;border-radius:6px;cursor:pointer}
+.btn-todo-save:hover{background:var(--primary-dark)}
+@media(max-width:980px){.cal-todo-wrap{grid-template-columns:1fr}.todo-panel{position:static}}
+/* ── ATTENDANCE ── */
+.att-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:11px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:7px;transition:all .12s}
+.att-card:hover{border-color:var(--c-absent);box-shadow:0 0 0 3px rgba(224,62,62,.06)}
+.att-card.makeup-done{border-left:3px solid var(--c-existing);opacity:.75}
+.att-card.expiry-warn{border-left:3px solid var(--overdue);background:var(--overdue-bg)}
+.att-card.expiry-critical{border-left:3px solid var(--c-absent);background:#fff0f0;animation:attPulse 2s infinite}
+@keyframes attPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,62,62,.2)}50%{box-shadow:0 0 0 4px rgba(224,62,62,.1)}}
+.att-badge{flex-shrink:0;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;margin-top:2px}
+.att-badge.absent{background:var(--c-absent-bg)}
+.att-badge.makeup{background:var(--c-existing-bg)}
+.att-body{flex:1;min-width:0}
+.att-name{font-size:13px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.att-meta{font-size:11px;color:var(--text2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.days-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.days-ok{background:var(--c-existing-bg);color:var(--c-existing)}
+.days-warn{background:var(--pending-light);color:var(--pending-color)}
+.days-critical{background:var(--overdue-bg);color:var(--overdue)}
+.days-expired{background:var(--surface3);color:var(--text3)}
+.expiry-alert-box{background:var(--overdue-bg);border:1px solid rgba(224,62,62,.2);border-radius:var(--r);padding:12px 16px;margin-bottom:12px}
+.expiry-alert-title{font-size:13px;font-weight:700;color:var(--overdue);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.btn-att-action{background:none;border:1px solid var(--border2);color:var(--text2);font-size:11px;font-weight:700;font-family:var(--font);padding:4px 10px;border-radius:6px;cursor:pointer;transition:all .12s;white-space:nowrap}
+.btn-att-action:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary)}
+/* ── RESOLUTION BUTTONS ── */
+.res-btn{padding:8px 4px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12px;font-weight:700;font-family:var(--font);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .12s;text-align:center}
+.res-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.res-btn.active-res{background:var(--ink);color:#fff;border-color:var(--ink)}
+.res-btn.active-makeup{background:var(--c-makeup);color:#fff;border-color:var(--c-makeup)}
+.res-btn.active-fee{background:var(--c-existing);color:#fff;border-color:var(--c-existing)}
+/* 출결 이력 */
+.att-tl-item{display:flex;gap:10px;padding-bottom:12px;position:relative}
+.att-tl-dot{width:18px;height:18px;border-radius:50%;flex-shrink:0;margin-top:2px;border:2px solid var(--surface);position:relative;z-index:1}
+.att-tl-dot.absent{background:var(--c-absent)}.att-tl-dot.makeup{background:var(--c-makeup)}.att-tl-dot.fee{background:var(--c-existing)}.att-tl-dot.pending{background:var(--text3)}
+.att-tl-content{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:8px 11px;font-size:12px}
+.att-tl-date{font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px}
+.att-tl-body{color:var(--text2);line-height:1.5}
+.res-pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:4px}
+.rp-pending{background:var(--surface2);color:var(--text3)}.rp-makeup{background:var(--c-makeup-bg);color:var(--c-makeup)}.rp-fee{background:var(--c-existing-bg);color:var(--c-existing)}
+@media(max-width:700px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .main{padding:12px}
+  .cal-cell{min-height:68px}
+  .form-row{grid-template-columns:1fr}
+  .student-grid{grid-template-columns:1fr}
+  .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200}
+  .mob-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px;font-size:9px;color:var(--text3);cursor:pointer;gap:2px}
+  .mob-item.active{color:var(--primary)}
+  .mob-icon{font-size:18px}
+  body{padding-bottom:56px}
+}
+@media(min-width:701px){.mobile-nav{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══ TOPBAR ═══ -->
+<header class="topbar">
+  <div class="logo"><div class="logo-icon">📋</div>CounseLog</div>
+  <div class="topbar-center">
+    <div class="save-info">
+      <span class="save-dot" id="saveDot"></span>
+      <span id="saveInfo">저장 정보 없음</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="feedback-pill" id="feedbackPill" onclick="showView('counselList')">
+      <span class="pill-dot"></span><span id="feedbackCount">0</span>건 피드백 필요
+    </div>
+    <div class="overdue-pill" id="overduePill" onclick="showView('overdue')">
+      <span class="pill-dot"></span><span id="overdueCount">0</span>건 follow-up
+    </div>
+    <div class="overdue-pill" id="expiryPill" onclick="showView('attendance')" style="background:var(--c-absent-bg);border-color:rgba(224,62,62,.25);color:var(--c-absent)">
+      <span class="pill-dot" style="background:var(--c-absent)"></span><span id="expiryCount">0</span>건 보강 소멸 임박
+    </div>
+    <button class="btn-top" onclick="showView('data')">💾 데이터 관리</button>
+    <button class="btn-top primary" onclick="quickSaveJSON()">📥 저장</button>
+  </div>
+</header>
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="sidebar">
+  <div class="sidebar-top">
+  <div class="nav-item active" onclick="showView('calendar')" data-view="calendar"><span class="nav-icon">📅</span>달력</div>
+  <div class="nav-item" onclick="showView('counselList')" data-view="counselList"><span class="nav-icon">📋</span>상담 목록</div>
+  <div class="nav-item" onclick="showView('students')" data-view="students"><span class="nav-icon">🎓</span>학생 DB</div>
+  <div class="nav-item" onclick="showView('schedules')" data-view="schedules"><span class="nav-icon">🗓</span>일정 목록</div>
+  <div class="nav-item" onclick="showView('overdue')" data-view="overdue"><span class="nav-icon">⚠️</span>Follow-up</div>
+  <div class="nav-item" onclick="showView('attendance')" data-view="attendance"><span class="nav-icon">📆</span>출결 관리</div>
+  <div class="nav-item" onclick="showView('checktmpl')" data-view="checktmpl"><span class="nav-icon">✅</span>체크리스트</div>
+  <div class="nav-item" onclick="showView('data')" data-view="data"><span class="nav-icon">💾</span>데이터 관리</div>
+  <div class="nav-divider"></div>
+  <div class="sidebar-stats">
+    <div class="stat-row"><span class="stat-label">전체 상담</span><span class="stat-val" id="st-total">0</span></div>
+    <div class="stat-row"><span class="stat-label">신규</span><span class="stat-val blue" id="st-new">0</span></div>
+    <div class="stat-row"><span class="stat-label">재원생</span><span class="stat-val green" id="st-existing">0</span></div>
+    <div class="stat-row"><span class="stat-label">피드백 필요</span><span class="stat-val red" id="st-feedback">0</span></div>
+    <div class="stat-row"><span class="stat-label">학생 수</span><span class="stat-val" id="st-students">0</span></div>
+    <div style="height:1px;background:var(--border);margin:5px 0"></div>
+    <div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.04em;margin-bottom:3px">🚌 차량 운행</div>
+    <div class="stat-row" style="cursor:pointer" onclick="showView('students');setBusFilter('yes')">
+      <span class="stat-label">· 이용</span>
+      <span class="stat-val green" id="st-bus-yes">0명</span>
+    </div>
+    <div class="stat-row" style="cursor:pointer" onclick="showView('students');setBusFilter('check')">
+      <span class="stat-label">· 확인 필요</span>
+      <span class="stat-val" style="color:var(--pending-color)" id="st-bus-check">0명</span>
+    </div>
+    <div class="stat-row" style="cursor:pointer" onclick="showView('students');setBusFilter('no')">
+      <span class="stat-label">· 미이용</span>
+      <span class="stat-val" id="st-bus-no">0명</span>
+    </div>
+  </div>
+  </div>
+
+  <!-- ── SIDEBAR TODO ── -->
+  <div class="sidebar-todo">
+    <div class="stodo-header">
+      <span class="stodo-title">📌 할 일 <span class="stodo-badge" id="stodoBadge">0</span></span>
+      <button class="stodo-btn-add" onclick="toggleSideTodoForm()" style="padding:3px 8px;font-size:10px">+ 추가</button>
+    </div>
+    <div class="stodo-prog">
+      <div class="stodo-prog-bar"><div class="stodo-prog-fill" id="stodoProgFill" style="width:0%"></div></div>
+      <div class="stodo-prog-txt"><span id="stodoProgTxt">0 / 0 완료</span><span id="stodoProgPct">0%</span></div>
+    </div>
+    <div class="stodo-filter-row">
+      <button class="stodo-ftab active" onclick="setSideTodoFilter('pending',this)">미완료</button>
+      <button class="stodo-ftab" onclick="setSideTodoFilter('all',this)">전체</button>
+      <button class="stodo-ftab" onclick="setSideTodoFilter('done',this)">완료</button>
+    </div>
+    <div class="stodo-list" id="stodoList"></div>
+    <div class="stodo-add-wrap" id="stodoAddWrap" style="display:none">
+      <div class="stodo-inp-row">
+        <input type="text" class="stodo-inp" id="stodoInp" placeholder="할 일 입력..." onkeydown="if(event.key==='Enter')addSideTodo()">
+        <button class="stodo-btn-add" onclick="addSideTodo()">추가</button>
+      </div>
+      <div class="stodo-meta-row">
+        <select class="stodo-sel" id="stodoCat">
+          <option value="admin">행정·관리</option>
+          <option value="payment">수납·결제</option>
+          <option value="class">수업 준비</option>
+          <option value="parent">학부모 연락</option>
+          <option value="etc">기타</option>
+        </select>
+        <input type="date" class="stodo-date" id="stodoDue" title="마감일">
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ═══ CALENDAR VIEW ═══ -->
+<div class="view active" id="view-calendar">
+  <div class="cal-header">
+    <div class="cal-nav">
+      <button class="cal-btn" onclick="changeMonth(-1)">‹</button>
+      <span class="cal-title" id="calTitle"></span>
+      <button class="cal-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <button class="btn-today" onclick="goToday()">오늘</button>
+  </div>
+  <div class="cal-grid">
+    <div class="cal-dow-row">
+      <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
+      <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div><div class="cal-dow">토</div>
+    </div>
+    <div class="cal-days" id="calDays"></div>
+  </div>
+  <div class="daily-panel">
+    <div class="daily-header">
+      <span class="daily-title" id="dailyTitle">날짜를 선택하세요</span>
+      <div class="daily-actions">
+        <button class="btn-add-sched" onclick="openSchedModal(null)">+ 일정</button>
+        <button class="btn-add" onclick="openCounselModal(null)">+ 상담</button>
+      </div>
+    </div>
+    <div class="daily-list" id="dailyList"><div class="daily-empty">날짜를 클릭하면 당일 일정이 표시됩니다</div></div>
+  </div>
+</div>
+
+<!-- ═══ COUNSEL LIST VIEW ═══ -->
+<div class="view" id="view-counselList">
+  <div class="view-header">
+    <div><div class="view-title">상담 목록</div><div class="view-subtitle" id="counselSubtitle"></div></div>
+    <button class="btn-add" onclick="openCounselModal(null)">+ 상담 추가</button>
+  </div>
+  <div class="list-toolbar">
+    <input type="text" class="search-input" placeholder="🔍 학생 이름 검색..." id="counselSearch" oninput="renderCounselList()">
+    <div class="filter-tabs">
+      <button class="ftab active" onclick="setCounselFilter('all',this)">전체</button>
+      <button class="ftab" onclick="setCounselFilter('new',this)">신규</button>
+      <button class="ftab" onclick="setCounselFilter('existing',this)">재원</button>
+      <button class="ftab" onclick="setCounselFilter('trial',this)">체험</button>
+      <button class="ftab" onclick="setCounselFilter('feedback',this)">피드백</button>
+    </div>
+    <select class="sort-sel" id="counselSort" onchange="renderCounselList()">
+      <option value="date-desc">최신순</option>
+      <option value="date-asc">오래된순</option>
+      <option value="name">이름순</option>
+    </select>
+  </div>
+  <div class="cards-list" id="counselCards"></div>
+</div>
+
+<!-- ═══ STUDENT DB VIEW ═══ -->
+<div class="view" id="view-students">
+  <div class="view-header">
+    <div><div class="view-title">학생 DB</div><div class="view-subtitle" id="studentSubtitle"></div></div>
+    <button class="btn-add" onclick="openStudentModal(null)">+ 학생 등록</button>
+  </div>
+  <div class="list-toolbar">
+    <input type="text" class="search-input" placeholder="🔍 학생 이름 검색..." id="studentSearch" oninput="renderStudents()">
+    <div class="filter-tabs">
+      <button class="ftab active" onclick="setStudentFilter('all',this)">전체</button>
+      <button class="ftab" onclick="setStudentFilter('active',this)">재원중</button>
+      <button class="ftab" onclick="setStudentFilter('pending',this)">검토중</button>
+      <button class="ftab" onclick="setStudentFilter('inactive',this)">종료</button>
+      <button class="ftab" onclick="setStudentFilter('bus-yes',this)">🚌 차량이용</button>
+      <button class="ftab" onclick="setStudentFilter('bus-check',this)">🚌 확인필요</button>
+    </div>
+  </div>
+  <div class="student-grid" id="studentGrid"></div>
+</div>
+
+<!-- ═══ SCHEDULE LIST VIEW ═══ -->
+<div class="view" id="view-schedules">
+  <div class="view-header">
+    <div><div class="view-title">일정 목록</div><div class="view-subtitle" id="schedSubtitle"></div></div>
+    <button class="btn-add" onclick="openSchedModal(null)">+ 일정 추가</button>
+  </div>
+  <div class="list-toolbar">
+    <input type="text" class="search-input" placeholder="🔍 제목·학생명 검색..." id="schedSearch" oninput="renderSchedList()">
+    <div class="filter-tabs">
+      <button class="ftab active" onclick="setSchedFilter('all',this)">전체</button>
+      <button class="ftab" onclick="setSchedFilter('absent',this)">결석</button>
+      <button class="ftab" onclick="setSchedFilter('makeup',this)">보강</button>
+      <button class="ftab" onclick="setSchedFilter('event',this)">특별일정</button>
+      <button class="ftab" onclick="setSchedFilter('notice',this)">공지</button>
+    </div>
+  </div>
+  <div class="cards-list" id="schedCards"></div>
+</div>
+
+<!-- ═══ ATTENDANCE VIEW ═══ -->
+<div class="view" id="view-attendance">
+  <div class="view-header">
+    <div><div class="view-title">📆 출결 관리</div><div class="view-subtitle" id="attSubtitle"></div></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn-add-sched" onclick="openSchedModal(null);document.getElementById('sf-category').value='absent';updateSchedCategory()">+ 결석</button>
+      <button class="btn-add" onclick="openSchedModal(null);document.getElementById('sf-category').value='makeup';updateSchedCategory()">+ 보강</button>
+    </div>
+  </div>
+  <!-- 소멸 임박 알림 -->
+  <div id="expiryAlert"></div>
+  <!-- 보강 필요 목록 -->
+  <div class="section-card" style="margin-bottom:12px">
+    <div class="section-header">
+      <span class="section-title">🔴 보강 필요 목록</span>
+      <span id="makeupNeededCount" style="font-size:12px;color:var(--text2)"></span>
+    </div>
+    <div id="makeupNeededList"></div>
+  </div>
+  <!-- 완료된 보강 -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-title">✅ 보강 완료</span>
+      <span id="makeupDoneCount" style="font-size:12px;color:var(--c-existing)"></span>
+    </div>
+    <div id="makeupDoneList"></div>
+  </div>
+</div>
+
+<!-- ═══ OVERDUE VIEW ═══ -->
+<div class="view" id="view-overdue">
+  <div class="view-header"><div><div class="view-title">⚠️ Follow-up 필요</div><div class="view-subtitle">다음 상담 예정일이 지난 건</div></div></div>
+  <div id="overdueList"></div>
+</div>
+
+<!-- ═══ CHECKLIST TEMPLATE VIEW ═══ -->
+<div class="view" id="view-checktmpl">
+  <div class="view-header"><div><div class="view-title">✅ 체크리스트 템플릿</div><div class="view-subtitle">상담 시 확인 항목을 미리 등록하세요</div></div></div>
+  <div style="max-width:500px">
+    <div class="data-section">
+      <div class="sec-label">등록된 항목</div>
+      <div class="tmpl-list" id="tmplList"></div>
+      <div class="add-check-row">
+        <input type="text" class="add-check-inp" id="tmplInput" placeholder="예: 차량 운행 가능 여부 확인" onkeydown="if(event.key==='Enter')addTemplate()">
+        <button class="btn-add-check" onclick="addTemplate()">+ 추가</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TODOS FULL VIEW ═══ -->
+<div class="view" id="view-todos">
+  <div class="view-header">
+    <div><div class="view-title">📌 할 일 목록</div><div class="view-subtitle" id="todoSubtitle"></div></div>
+    <button class="btn-add" onclick="openTodoForm()">+ 할 일 추가</button>
+  </div>
+  <div style="max-width:640px">
+    <div style="background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden">
+      <div class="todo-progress" id="todoProgress2">
+        <div class="todo-prog-bar"><div class="todo-prog-fill" id="todoProgFill2" style="width:0%"></div></div>
+        <div class="todo-prog-text"><span id="todoProgText2">0 / 0 완료</span><span id="todoProgPct2">0%</span></div>
+      </div>
+      <div class="todo-filters" style="justify-content:flex-start;gap:4px">
+        <button class="todo-ftab active" style="flex:none;padding:4px 14px" onclick="setTodoFilter2('all',this)">전체</button>
+        <button class="todo-ftab" style="flex:none;padding:4px 14px" onclick="setTodoFilter2('pending',this)">미완료</button>
+        <button class="todo-ftab" style="flex:none;padding:4px 14px" onclick="setTodoFilter2('done',this)">완료</button>
+        <button class="todo-ftab" style="flex:none;padding:4px 14px" onclick="setTodoFilter2('admin',this)">행정</button>
+        <button class="todo-ftab" style="flex:none;padding:4px 14px" onclick="setTodoFilter2('payment',this)">수납</button>
+        <button class="todo-ftab" style="flex:none;padding:4px 14px" onclick="setTodoFilter2('class',this)">수업</button>
+        <button class="todo-ftab" style="flex:none;padding:4px 14px" onclick="setTodoFilter2('parent',this)">연락</button>
+      </div>
+      <div class="todo-list" id="todoList2" style="max-height:none"></div>
+      <div class="todo-add-form" id="todoAddForm2" style="display:none">
+        <input type="text" class="todo-add-inp" id="todoInp2" placeholder="할 일을 입력하세요..." onkeydown="if(event.key==='Enter')saveTodo2()">
+        <div class="todo-add-row">
+          <select class="todo-add-sel" id="todoCat2">
+            <option value="admin">🔵 행정·관리</option>
+            <option value="payment">🟢 수납·결제</option>
+            <option value="class">🟣 수업 준비</option>
+            <option value="parent">🟠 학부모 연락</option>
+            <option value="etc">⚫ 기타</option>
+          </select>
+          <input type="date" class="todo-add-date" id="todoDue2" title="마감일">
+        </div>
+        <div class="todo-add-btns">
+          <button class="btn-todo-cancel" onclick="document.getElementById('todoAddForm2').style.display='none'">취소</button>
+          <button class="btn-todo-save" onclick="saveTodo2()">추가</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DATA MANAGEMENT VIEW ═══ -->
+<div class="view" id="view-data">
+  <div class="view-header"><div><div class="view-title">💾 데이터 관리</div><div class="view-subtitle">저장·백업·복원</div></div></div>
+
+  <div class="data-section">
+    <div class="data-sec-title">📥 로컬 파일 저장</div>
+    <div class="data-sec-desc">
+      현재 모든 데이터를 JSON 파일로 저장합니다. 컴퓨터를 바꿀 때 이 파일을 복사하면 그대로 복원할 수 있습니다.<br>
+      <strong>마지막 저장:</strong> <span id="lastSaveDisplay">없음</span>
+    </div>
+    <div class="data-actions">
+      <button class="btn-data primary" onclick="saveJSON()">📥 JSON 파일로 저장</button>
+    </div>
+  </div>
+
+  <div class="data-section">
+    <div class="data-sec-title">📤 파일에서 불러오기</div>
+    <div class="data-sec-desc">저장해 둔 JSON 파일을 불러오면 데이터가 복원됩니다. 현재 데이터는 덮어씌워지므로, 먼저 저장 후 불러오세요.</div>
+    <div class="data-actions">
+      <button class="btn-data secondary" onclick="document.getElementById('fileInput').click()">📂 파일 선택</button>
+    </div>
+    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadFromFile(this)">
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      📁 JSON 파일을 여기에 드래그&드롭하거나 클릭해서 선택
+    </div>
+  </div>
+
+  <div class="data-section">
+    <div class="data-sec-title">☁️ GitHub Gist 자동 동기화</div>
+    <div class="data-sec-desc">
+      PC·핸드폰 어디서든 같은 데이터를 사용할 수 있어요.<br>
+      <strong>Gist ID</strong>와 <strong>토큰</strong>을 한 번만 입력하면 앱을 열 때마다 자동으로 불러옵니다.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Gist ID</label>
+        <input type="text" class="form-input" id="gistIdInput" placeholder="cdaab82730e6df9a590b7e9d0db94972" style="font-size:12px">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">GitHub Token (ghp_xxx...)</label>
+        <input type="password" class="form-input" id="gistTokenInput" placeholder="ghp_xxxxxxxxxxxx" style="font-size:12px">
+      </div>
+    </div>
+    <div class="data-actions">
+      <button class="btn-data primary" onclick="saveGistConfig()">💾 설정 저장</button>
+      <button class="btn-data secondary" onclick="pushToGist()">⬆️ 지금 업로드</button>
+      <button class="btn-data secondary" onclick="pullFromGist()">⬇️ 지금 불러오기</button>
+    </div>
+    <div id="gistStatus" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
+  </div>
+
+  <div class="data-section">
+    <div class="data-sec-title">🗑️ 데이터 초기화</div>
+    <div class="data-sec-desc">모든 데이터를 삭제합니다. 이 작업은 되돌릴 수 없습니다. 반드시 먼저 JSON 파일로 저장하세요.</div>
+    <div class="data-actions">
+      <button class="btn-data danger" onclick="resetData()">🗑️ 전체 데이터 초기화</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav">
+  <div class="mob-item active" onclick="showView('calendar')" data-mview="calendar"><span class="mob-icon">📅</span>달력</div>
+  <div class="mob-item" onclick="showView('counselList')" data-mview="counselList"><span class="mob-icon">📋</span>상담</div>
+  <div class="mob-item" onclick="showView('attendance')" data-mview="attendance"><span class="mob-icon">📆</span>출결</div>
+  <div class="mob-item" onclick="showView('students')" data-mview="students"><span class="mob-icon">🎓</span>학생</div>
+  <div class="mob-item" onclick="showView('data')" data-mview="data"><span class="mob-icon">💾</span>저장</div>
+</div>
+
+<!-- ═══ COUNSEL FORM MODAL ═══ -->
+<div class="modal-overlay" id="counselModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="counselModalTitle">상담 기록 추가</span>
+      <button class="modal-close" onclick="closeCounselModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">구분 <span class="req">*</span></label>
+        <div class="type-toggle">
+          <button class="type-btn a-new" id="typeNew" onclick="setCounselType('new')">🔵 신규</button>
+          <button class="type-btn" id="typeExisting" onclick="setCounselType('existing')">🟢 재원</button>
+          <button class="type-btn" id="typeTrial" onclick="setCounselType('trial')">🟣 체험</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="position:relative">
+          <label class="form-label">학생 이름 <span class="req">*</span></label>
+          <input type="text" class="form-input" id="cf-student" placeholder="홍길동" oninput="acSearch(this.value,'cf-student','acBox')">
+          <div id="acBox" style="position:relative"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">상담 날짜 <span class="req">*</span></label>
+          <input type="date" class="form-input" id="cf-date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">학부모 이름</label>
+          <input type="text" class="form-input" id="cf-parent">
+        </div>
+        <div class="form-group">
+          <label class="form-label">연락처</label>
+          <input type="text" class="form-input" id="cf-phone" placeholder="010-0000-0000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">상담 내용</label>
+        <textarea class="form-textarea" id="cf-content" placeholder="상담 내용을 입력하세요..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">상담 결과</label>
+          <select class="form-select" id="cf-result">
+            <option value="enrolled">✅ 등록 완료</option>
+            <option value="pending">⏳ 보류</option>
+            <option value="none">— 미결정</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">다음 상담 예정일</label>
+          <input type="date" class="form-input" id="cf-next">
+        </div>
+      </div>
+      <!-- FEEDBACK FLAG -->
+      <div class="feedback-toggle" onclick="toggleFeedbackFlag()">
+        <input type="checkbox" id="cf-feedback" onclick="event.stopPropagation()">
+        <label for="cf-feedback">💬 피드백 필요 — 확인 후 안내해야 할 사항 있음</label>
+      </div>
+      <div class="form-group" id="feedbackMemoGroup" style="display:none;margin-top:8px">
+        <label class="form-label">피드백 내용 (확인 후 안내할 사항)</label>
+        <textarea class="form-textarea" id="cf-feedback-memo" placeholder="예: 시간 변경 가능 여부 확인 후 안내 / 차량 운행 노선 확인 필요..." style="min-height:55px"></textarea>
+      </div>
+      <div class="sec-divider"></div>
+      <div class="sec-label">✅ 확인 체크리스트</div>
+      <div class="checklist-area" id="counselChecklist"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-del" id="btnCounselDel" onclick="deleteCounsel()" style="display:none">🗑️ 삭제</button>
+      <button class="btn-cancel" onclick="closeCounselModal()">취소</button>
+      <button class="btn-save" onclick="saveCounsel()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCHEDULE FORM MODAL ═══ -->
+<div class="modal-overlay" id="schedModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="schedModalTitle">일정 추가</span>
+      <button class="modal-close" onclick="closeSchedModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">일정 종류 <span class="req">*</span></label>
+        <select class="form-select" id="sf-category" onchange="updateSchedCategory()">
+          <option value="absent">🔴 결석</option>
+          <option value="makeup">🟠 보강</option>
+          <option value="event">🔵 특별일정</option>
+          <option value="notice">⚫ 공지·휴원</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">제목 <span class="req">*</span></label>
+        <input type="text" class="form-input" id="sf-title" placeholder="일정 제목">
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="position:relative">
+          <label class="form-label" id="sf-student-label">학생 이름</label>
+          <input type="text" class="form-input" id="sf-student" placeholder="해당 학생 (선택)" oninput="acSearch(this.value,'sf-student','acBox2');updateAbsentLink()">
+          <div id="acBox2" style="position:relative"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">날짜 <span class="req">*</span></label>
+          <input type="date" class="form-input" id="sf-date" oninput="updateAbsentLink()">
+        </div>
+      </div>
+      <!-- 결석 전용: 보강 만료일 + 처리 방식 선택 -->
+      <div id="sf-absent-info" style="display:none">
+        <div style="background:var(--c-absent-bg);border-radius:var(--rs);padding:9px 12px;margin-bottom:10px;font-size:12px;color:var(--c-absent)">
+          ⏰ 보강 가능 기간: <strong id="sf-makeup-deadline">—</strong>까지 (결석일로부터 1개월)
+        </div>
+        <div class="form-group">
+          <label class="form-label">📋 결석 처리 방식</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px" id="sf-resolution-toggle">
+            <button type="button" class="res-btn active-res" id="resBtnPending" onclick="setResolution('pending')">⏳ 미정</button>
+            <button type="button" class="res-btn" id="resBtnMakeup" onclick="setResolution('makeup')">🟠 보강</button>
+            <button type="button" class="res-btn" id="resBtnFee" onclick="setResolution('fee')">💰 원비 차감</button>
+          </div>
+        </div>
+        <!-- 원비 차감 전용 입력 -->
+        <div id="sf-fee-deduct-group" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">차감 금액 (원)</label>
+              <input type="number" class="form-input" id="sf-fee-amount" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">차감 적용 월</label>
+              <input type="month" class="form-input" id="sf-fee-month">
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 보강 전용: 연결할 결석 건 선택 -->
+      <div id="sf-makeup-link-group" style="display:none">
+        <div class="form-group">
+          <label class="form-label">🔗 연결할 결석 건 선택</label>
+          <select class="form-select" id="sf-makeup-link">
+            <option value="">— 결석 건 선택 (선택사항) —</option>
+          </select>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px">선택하면 해당 결석이 보강 완료로 처리됩니다</div>
+        </div>
+      </div>
+      <div class="form-group" id="sf-enddate-group">
+        <label class="form-label">종료 날짜 (여러 날에 걸친 일정)</label>
+        <input type="date" class="form-input" id="sf-enddate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">메모</label>
+        <textarea class="form-textarea" id="sf-memo" placeholder="상세 내용..." style="min-height:55px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-del" id="btnSchedDel" onclick="deleteSched()" style="display:none">🗑️ 삭제</button>
+      <button class="btn-cancel" onclick="closeSchedModal()">취소</button>
+      <button class="btn-save" onclick="saveSched()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STUDENT FORM MODAL ═══ -->
+<div class="modal-overlay" id="studentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="studentModalTitle">학생 등록</span>
+      <button class="modal-close" onclick="closeStudentModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">학생 이름 <span class="req">*</span></label>
+          <input type="text" class="form-input" id="smf-name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">학년</label>
+          <select class="form-select" id="smf-grade">
+            <option value="">선택</option>
+            <option>초1</option><option>초2</option><option>초3</option><option>초4</option><option>초5</option><option>초6</option>
+            <option>중1</option><option>중2</option><option>중3</option>
+            <option>고1</option><option>고2</option><option>고3</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">학부모 이름</label>
+          <input type="text" class="form-input" id="smf-parent">
+        </div>
+        <div class="form-group">
+          <label class="form-label">연락처</label>
+          <input type="text" class="form-input" id="smf-phone" placeholder="010-0000-0000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">수강 과목</label>
+          <input type="text" class="form-input" id="smf-subject" placeholder="수학, 영어">
+        </div>
+        <div class="form-group">
+          <label class="form-label">수업 시간</label>
+          <input type="text" class="form-input" id="smf-time" placeholder="월수금 4시">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">주 수강 횟수</label>
+          <select class="form-select" id="smf-weeklyCount">
+            <option value="">미설정</option>
+            <option value="1">주 1회</option>
+            <option value="2">주 2회</option>
+            <option value="3">주 3회</option>
+            <option value="4">주 4회</option>
+            <option value="5">주 5회</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">차량 운행</label>
+          <select class="form-select" id="smf-bus">
+            <option value="">미선택</option>
+            <option value="yes">이용</option>
+            <option value="no">미이용</option>
+            <option value="check">확인 필요</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">수강료</label>
+          <input type="text" class="form-input" id="smf-fee" placeholder="300,000원">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">등록 날짜</label>
+          <input type="date" class="form-input" id="smf-enroll">
+        </div>
+        <div class="form-group">
+          <label class="form-label">상태</label>
+          <select class="form-select" id="smf-status">
+            <option value="active">재원중</option>
+            <option value="pending">등록검토</option>
+            <option value="new-reg">신규등록</option>
+            <option value="inactive">수강종료</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">메모</label>
+        <textarea class="form-textarea" id="smf-memo" style="min-height:50px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-del" id="btnStudentDel" onclick="deleteStudent()" style="display:none">🗑️ 삭제</button>
+      <button class="btn-cancel" onclick="closeStudentModal()">취소</button>
+      <button class="btn-save" onclick="saveStudent()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STUDENT DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="studentDetailModal">
+  <div class="modal wide">
+    <div class="modal-header">
+      <span class="modal-title">학생 상세</span>
+      <button class="modal-close" onclick="closeStudentDetail()">×</button>
+    </div>
+    <div class="modal-body" id="studentDetailBody"></div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// STATE
+// ================================================================
+const LS = 'counselog_v3';
+let DB = { version:'3.0', savedAt:null, counselings:[], students:[], schedules:[], templates:[], todos:[] };
+let calYear, calMonth, selDate = null;
+let editCounselId = null, editStudentId = null, editSchedId = null, editTodoId = null;
+let counselType = 'new', counselFilter = 'all', studentFilter = 'all', schedFilter = 'all';
+let absentResolution = 'pending'; // 'pending' | 'makeup' | 'fee'
+let todoFilter = 'pending', todoFilter2 = 'all';
+let formChecks = {};
+
+// ── Helpers ──
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+const today = () => { const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const pad = n => String(n).padStart(2,'0');
+const korDate = s => { if(!s)return''; const [y,m,d]=s.split('-'); return `${y}년 ${+m}월 ${+d}일`; };
+
+// ── Storage ──
+function loadDB() {
+  try { const r = localStorage.getItem(LS); if(r) DB = JSON.parse(r); } catch(e){}
+  if(!DB.todos) DB.todos = [];
+}
+function saveDB() {
+  localStorage.setItem(LS, JSON.stringify(DB));
+  updateSaveInfo();
+}
+
+function updateSaveInfo() {
+  const dot = document.getElementById('saveDot');
+  const info = document.getElementById('saveInfo');
+  const disp = document.getElementById('lastSaveDisplay');
+  const cfg = getGistConfig();
+  if(DB.savedAt) {
+    const d = new Date(DB.savedAt);
+    const s = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    if(info) info.textContent = (cfg.id&&cfg.token?'☁️ Gist 연동됨 · ':'')+'마지막 저장: '+s;
+    if(disp) disp.textContent = s;
+    if(dot) dot.className = 'save-dot ok';
+  } else {
+    if(info) info.textContent = cfg.id&&cfg.token ? '☁️ Gist 연동됨 · 아직 저장 전' : '아직 저장하지 않았습니다';
+    if(disp) disp.textContent = '없음';
+    if(dot) dot.className = 'save-dot warn';
+  }
+}
+
+// ================================================================
+// INIT
+// ================================================================
+function init() {
+  loadDB();
+  const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth(); selDate = today();
+  setupDropZone();
+  loadGistConfig();
+  // Gist 설정이 있으면 자동으로 불러오기
+  const cfg = getGistConfig();
+  if(cfg.id && cfg.token) {
+    pullFromGist(true); // true = 조용히 (알림 없이)
+  } else {
+    insertSample();
+    renderAll();
+  }
+}
+
+function renderAll() {
+  updateStats();
+  renderCalendar();
+  renderDaily();
+  renderCounselList();
+  renderStudents();
+  renderSchedList();
+  renderOverdue();
+  renderAttendance();
+  renderTemplates();
+  renderSideTodo();
+  renderTodos2();
+  updatePills();
+  updateSaveInfo();
+}
+
+// ================================================================
+// STATS & PILLS
+// ================================================================
+function updateStats() {
+  const C = DB.counselings, S = DB.students;
+  document.getElementById('st-total').textContent = C.length;
+  document.getElementById('st-new').textContent = C.filter(c=>c.type==='new').length;
+  document.getElementById('st-existing').textContent = C.filter(c=>c.type==='existing').length;
+  document.getElementById('st-feedback').textContent = C.filter(c=>c.feedbackNeeded&&!c.feedbackDone).length;
+  document.getElementById('st-students').textContent = S.length;
+  // 차량 통계 (재원중 학생 기준)
+  const active = S.filter(s=>s.status==='active');
+  document.getElementById('st-bus-yes').textContent = active.filter(s=>s.bus==='yes').length + '명';
+  document.getElementById('st-bus-check').textContent = S.filter(s=>s.bus==='check').length + '명';
+  document.getElementById('st-bus-no').textContent = active.filter(s=>s.bus==='no').length + '명';
+}
+
+function updatePills() {
+  const t = today();
+  const ov = DB.counselings.filter(c=>c.nextDate&&c.nextDate<t).length;
+  const fb = DB.counselings.filter(c=>c.feedbackNeeded&&!c.feedbackDone).length;
+  // 보강 소멸 임박 (7일 이내 + 이미 소멸)
+  const expiring = DB.schedules.filter(s=>{
+    if(s.category!=='absent'||s.makeupDone) return false;
+    const exp=s.makeupExpiry||getExpiryDate(s.date);
+    return daysLeft(exp)<=7;
+  }).length;
+  const op = document.getElementById('overduePill'), fp = document.getElementById('feedbackPill');
+  const ep = document.getElementById('expiryPill');
+  document.getElementById('overdueCount').textContent = ov;
+  document.getElementById('feedbackCount').textContent = fb;
+  document.getElementById('expiryCount').textContent = expiring;
+  op.classList.toggle('show', ov>0);
+  fp.classList.toggle('show', fb>0);
+  if(ep) ep.classList.toggle('show', expiring>0);
+}
+
+// ================================================================
+// CALENDAR
+// ================================================================
+const CAT_COLOR = {
+  new:'new', existing:'existing', trial:'trial',
+  absent:'absent', makeup:'makeup', event:'event', notice:'notice', feedback:'feedback'
+};
+const CAT_LABEL = {
+  new:'신', existing:'재', trial:'체험',
+  absent:'결석', makeup:'보강', event:'특별일정', notice:'공지'
+};
+
+function changeMonth(d) { calMonth+=d; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); renderDaily(); }
+function goToday() { const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); selDate=today(); renderCalendar(); renderDaily(); }
+
+function getCalIndex() {
+  const idx = {};
+  // Counselings
+  DB.counselings.forEach(c => {
+    if(!c.date) return;
+    if(!idx[c.date]) idx[c.date] = [];
+    const hasFB = c.feedbackNeeded && !c.feedbackDone;
+    idx[c.date].push({ type: hasFB ? 'feedback' : c.type, label: (hasFB?'💬 ':'')+(CAT_LABEL[c.type]||c.type)+' '+c.studentName, id:c.id, isCounsel:true });
+  });
+  // Schedules
+  DB.schedules.forEach(s => {
+    if(!s.date) return;
+    // Multi-day: expand
+    const dates = [];
+    if(s.endDate && s.endDate > s.date) {
+      let cur = new Date(s.date+'T00:00:00');
+      const end = new Date(s.endDate+'T00:00:00');
+      while(cur <= end) {
+        dates.push(cur.getFullYear()+'-'+pad(cur.getMonth()+1)+'-'+pad(cur.getDate()));
+        cur.setDate(cur.getDate()+1);
+      }
+    } else { dates.push(s.date); }
+    dates.forEach(dt => {
+      if(!idx[dt]) idx[dt] = [];
+      idx[dt].push({ type: s.category, label: s.title+(s.studentName?' ('+s.studentName+')':''), id:s.id, isSched:true });
+    });
+  });
+  return idx;
+}
+
+function renderCalendar() {
+  document.getElementById('calTitle').textContent = `${calYear}년 ${calMonth+1}월`;
+  const idx = getCalIndex();
+  const tod = today();
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const lastDay = new Date(calYear, calMonth+1, 0).getDate();
+  const prevLast = new Date(calYear, calMonth, 0).getDate();
+  const total = Math.ceil((firstDay+lastDay)/7)*7;
+  let html = '';
+  for(let i=0; i<total; i++) {
+    let d, mo=calMonth, yr=calYear, other=false;
+    if(i<firstDay){ d=prevLast-firstDay+i+1; mo=calMonth-1; if(mo<0){mo=11;yr=calYear-1;} other=true; }
+    else if(i>=firstDay+lastDay){ d=i-firstDay-lastDay+1; mo=calMonth+1; if(mo>11){mo=0;yr=calYear+1;} other=true; }
+    else { d=i-firstDay+1; }
+    const ds = yr+'-'+pad(mo+1)+'-'+pad(d);
+    const dow = i%7;
+    const items = idx[ds]||[];
+    const isT=ds===tod, isSel=ds===selDate, isSun=dow===0, isSat=dow===6;
+    const shown = items.slice(0,4);
+    let chips = shown.map(it=>`<span class="cal-chip ${CAT_COLOR[it.type]||'notice'}">${it.label}</span>`).join('');
+    if(items.length>4) chips += `<span class="cal-chip more">+${items.length-4}건</span>`;
+    html += `<div class="cal-cell${other?' other-month':''}${isT?' today':''}${isSel?' selected':''}${isSun?' sun':''}${isSat?' sat':''}" onclick="selectDate('${ds}')">
+      <div class="cal-dn">${d}</div>
+      <div class="cal-chips">${chips}</div>
+    </div>`;
+  }
+  document.getElementById('calDays').innerHTML = html;
+}
+
+function selectDate(d) { selDate=d; renderCalendar(); renderDaily(); }
+
+// ================================================================
+// DAILY PANEL
+// ================================================================
+function renderDaily() {
+  const tEl = document.getElementById('dailyTitle');
+  const list = document.getElementById('dailyList');
+  if(!selDate) { tEl.textContent='날짜를 선택하세요'; list.innerHTML='<div class="daily-empty">날짜를 클릭하면 당일 일정이 표시됩니다</div>'; return; }
+  const tod = today();
+  tEl.textContent = korDate(selDate)+(selDate===tod?' (오늘)':'');
+  const counsels = DB.counselings.filter(c=>c.date===selDate);
+  const scheds = DB.schedules.filter(s=>{
+    if(s.date===selDate) return true;
+    if(s.endDate && s.date<=selDate && s.endDate>=selDate) return true;
+    return false;
+  });
+  if(!counsels.length && !scheds.length) { list.innerHTML='<div class="daily-empty">이 날 일정이 없습니다</div>'; return; }
+  list.innerHTML = [
+    ...scheds.map(s=>schedCardHtml(s)),
+    ...counsels.map(c=>counselCardHtml(c))
+  ].join('');
+}
+
+// ================================================================
+// CARD HTML
+// ================================================================
+const SCHED_META = {
+  absent:{label:'결석',color:'var(--c-absent)'},
+  makeup:{label:'보강',color:'var(--c-makeup)'},
+  event: {label:'특별일정',color:'var(--c-event)'},
+  notice:{label:'공지',color:'var(--c-notice)'}
+};
+
+function schedCardHtml(s) {
+  const m = SCHED_META[s.category]||{label:s.category,color:'#888'};
+  return `<div class="sched-card" onclick="openSchedModal('${s.id}')">
+    <div class="sched-bar" style="background:${m.color}"></div>
+    <div class="sched-body">
+      <div class="sched-title">${s.title}</div>
+      <div class="sched-meta">${m.label}${s.studentName?' · '+s.studentName:''}${s.endDate&&s.endDate!==s.date?' · ~'+s.endDate:''}</div>
+      ${s.memo?`<div class="sched-meta" style="margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.memo}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function counselCardHtml(c, showDate=false) {
+  const t = today();
+  const overdue = c.nextDate && c.nextDate < t;
+  const fb = c.feedbackNeeded && !c.feedbackDone;
+  const typeLabel = c.type==='new'?'신규':c.type==='existing'?'재원':'체험';
+  const typeCls = c.type==='new'?'new':c.type==='existing'?'existing':'trial';
+  const badgeBg = c.type==='new'?'var(--c-new-bg)':c.type==='existing'?'var(--c-existing-bg)':'var(--c-trial-bg)';
+  const badgeColor = c.type==='new'?'var(--c-new)':c.type==='existing'?'var(--c-existing)':'var(--c-trial)';
+  const done = c.checks?Object.values(c.checks).filter(Boolean).length:0;
+  const total = c.checks?Object.keys(c.checks).length:0;
+  return `<div class="item-card${overdue?' overdue-card':''}${fb?' feedback-card':''}" onclick="openCounselModal('${c.id}')">
+    <span class="card-badge" style="background:${badgeBg};color:${badgeColor}">${typeLabel}</span>
+    <div class="card-body">
+      <div class="card-name">${c.studentName}
+        ${overdue?'<span class="flag flag-overdue">⚠ follow-up</span>':''}
+        ${fb?'<span class="flag flag-feedback">💬 피드백</span>':''}
+      </div>
+      <div class="card-meta">
+        ${showDate?`<span>📅 ${c.date}</span>`:''}
+        ${c.parentName?`<span>${c.parentName}</span>`:''}
+        ${c.phone?`<span>${c.phone}</span>`:''}
+        <span class="result-badge ${c.result==='enrolled'?'rb-enrolled':c.result==='pending'?'rb-pending':'rb-none'}">${c.result==='enrolled'?'등록완료':c.result==='pending'?'보류':'미결정'}</span>
+        ${c.nextDate?`<span style="color:${overdue?'var(--overdue)':'var(--text3)'}">다음: ${c.nextDate}</span>`:''}
+      </div>
+      ${c.content?`<div class="card-preview">${c.content}</div>`:''}
+      ${fb&&c.feedbackMemo?`<div class="card-preview" style="color:var(--c-feedback)">💬 ${c.feedbackMemo}</div>`:''}
+      ${total>0?`<div class="mini-checks"><span class="mini-check ${done===total?'mc-done':'mc-undone'}">체크 ${done}/${total}</span></div>`:''}
+    </div>
+  </div>`;
+}
+
+// ================================================================
+// COUNSEL LIST
+// ================================================================
+function setCounselFilter(f,el) { counselFilter=f; document.querySelectorAll('#view-counselList .ftab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); renderCounselList(); }
+
+function renderCounselList() {
+  const q=(document.getElementById('counselSearch').value||'').trim().toLowerCase();
+  const sort=document.getElementById('counselSort').value;
+  const t=today();
+  let items=DB.counselings.filter(c=>{
+    if(counselFilter==='new'&&c.type!=='new') return false;
+    if(counselFilter==='existing'&&c.type!=='existing') return false;
+    if(counselFilter==='trial'&&c.type!=='trial') return false;
+    if(counselFilter==='feedback'&&!(c.feedbackNeeded&&!c.feedbackDone)) return false;
+    if(q&&!c.studentName.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if(sort==='date-desc') items.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  else if(sort==='date-asc') items.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  else items.sort((a,b)=>a.studentName.localeCompare(b.studentName,'ko'));
+  document.getElementById('counselSubtitle').textContent=`총 ${items.length}건`;
+  const el=document.getElementById('counselCards');
+  el.innerHTML=items.length?items.map(c=>counselCardHtml(c,true)).join(''):'<div class="list-empty"><div class="empty-icon">📋</div>상담 기록이 없습니다</div>';
+}
+
+// ================================================================
+// SCHEDULE LIST
+// ================================================================
+function setSchedFilter(f,el) { schedFilter=f; document.querySelectorAll('#view-schedules .ftab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); renderSchedList(); }
+
+function renderSchedList() {
+  const q=(document.getElementById('schedSearch').value||'').trim().toLowerCase();
+  let items=DB.schedules.filter(s=>{
+    if(schedFilter!=='all'&&s.category!==schedFilter) return false;
+    if(q&&!(s.title.toLowerCase().includes(q)||(s.studentName||'').toLowerCase().includes(q))) return false;
+    return true;
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('schedSubtitle').textContent=`총 ${items.length}건`;
+  const el=document.getElementById('schedCards');
+  el.innerHTML=items.length?items.map(s=>schedCardHtml(s)).join(''):'<div class="list-empty"><div class="empty-icon">🗓</div>일정이 없습니다</div>';
+}
+
+// ================================================================
+// OVERDUE
+// ================================================================
+function renderOverdue() {
+  const t=today();
+  const items=DB.counselings.filter(c=>c.nextDate&&c.nextDate<t).sort((a,b)=>a.nextDate.localeCompare(b.nextDate));
+  const el=document.getElementById('overdueList');
+  el.innerHTML=items.length
+    ?`<div class="ov-sec-title">⚠️ ${items.length}건이 예정일을 지났습니다</div>`+items.map(c=>counselCardHtml(c,true)).join('')
+    :'<div class="list-empty"><div class="empty-icon">✅</div>모든 follow-up이 완료되었습니다!</div>';
+}
+
+// ================================================================
+// COUNSEL FORM MODAL
+// ================================================================
+function toggleFeedbackFlag() {
+  const cb = document.getElementById('cf-feedback');
+  cb.checked = !cb.checked;
+  document.getElementById('feedbackMemoGroup').style.display = cb.checked?'':'none';
+}
+
+function buildChecklist(existingChecks) {
+  const area = document.getElementById('counselChecklist');
+  if(!DB.templates.length) { area.innerHTML='<div style="font-size:12px;color:var(--text3);padding:4px 0">체크리스트 항목 없음. 왼쪽 메뉴 "체크리스트"에서 추가하세요.</div>'; formChecks={}; return; }
+  formChecks={};
+  DB.templates.forEach(t=>{ formChecks[t.id]=existingChecks?!!(existingChecks[t.id]):false; });
+  area.innerHTML = DB.templates.map(t=>{
+    const done=!!formChecks[t.id];
+    return `<div class="check-item">
+      <input type="checkbox" class="check-cb" id="chk_${t.id}" ${done?'checked':''} onchange="formChecks['${t.id}']=this.checked;document.querySelector('label[for=chk_${t.id}]').classList.toggle('done',this.checked)">
+      <label class="check-lbl ${done?'done':''}" for="chk_${t.id}">${t.label}</label>
+    </div>`;
+  }).join('');
+}
+
+function openCounselModal(id) {
+  editCounselId=id;
+  const c=id?DB.counselings.find(x=>x.id===id):null;
+  document.getElementById('counselModalTitle').textContent=c?'상담 기록 수정':'상담 기록 추가';
+  counselType=c?c.type:'new';
+  document.getElementById('cf-student').value=c?.studentName||'';
+  document.getElementById('cf-parent').value=c?.parentName||'';
+  document.getElementById('cf-phone').value=c?.phone||'';
+  document.getElementById('cf-date').value=c?.date||selDate||today();
+  document.getElementById('cf-content').value=c?.content||'';
+  document.getElementById('cf-result').value=c?.result||'none';
+  document.getElementById('cf-next').value=c?.nextDate||'';
+  const fb=c?.feedbackNeeded||false;
+  document.getElementById('cf-feedback').checked=fb;
+  document.getElementById('feedbackMemoGroup').style.display=fb?'':'none';
+  document.getElementById('cf-feedback-memo').value=c?.feedbackMemo||'';
+  document.getElementById('btnCounselDel').style.display=c?'':'none';
+  document.getElementById('acBox').innerHTML='';
+  buildChecklist(c?.checks||null);
+  updateCounselTypeButtons();
+  document.getElementById('counselModal').classList.add('open');
+}
+
+function closeCounselModal() { document.getElementById('counselModal').classList.remove('open'); }
+function setCounselType(t) { counselType=t; updateCounselTypeButtons(); }
+function updateCounselTypeButtons() {
+  ['new','existing','trial'].forEach(t=>{
+    document.getElementById('type'+t.charAt(0).toUpperCase()+t.slice(1)).className='type-btn'+(counselType===t?' a-'+t:'');
+  });
+}
+
+function saveCounsel() {
+  const name=document.getElementById('cf-student').value.trim();
+  const date=document.getElementById('cf-date').value;
+  if(!name){alert('학생 이름을 입력하세요.');return;}
+  if(!date){alert('날짜를 입력하세요.');return;}
+  // sync formChecks from DOM
+  DB.templates.forEach(t=>{
+    const el=document.getElementById('chk_'+t.id);
+    if(el) formChecks[t.id]=el.checked;
+  });
+  const obj={
+    id:editCounselId||uid(), type:counselType, studentName:name,
+    parentName:document.getElementById('cf-parent').value.trim(),
+    phone:document.getElementById('cf-phone').value.trim(),
+    date, content:document.getElementById('cf-content').value.trim(),
+    result:document.getElementById('cf-result').value,
+    nextDate:document.getElementById('cf-next').value||null,
+    feedbackNeeded:document.getElementById('cf-feedback').checked,
+    feedbackMemo:document.getElementById('cf-feedback-memo').value.trim(),
+    feedbackDone:editCounselId?(DB.counselings.find(x=>x.id===editCounselId)?.feedbackDone||false):false,
+    checks:{...formChecks},
+    createdAt:editCounselId?(DB.counselings.find(x=>x.id===editCounselId)?.createdAt||Date.now()):Date.now()
+  };
+  if(editCounselId){const i=DB.counselings.findIndex(x=>x.id===editCounselId);if(i!==-1)DB.counselings[i]=obj;}
+  else DB.counselings.push(obj);
+  saveDBAndSync(); closeCounselModal();
+  selDate=date; const d=new Date(date+'T00:00:00'); calYear=d.getFullYear(); calMonth=d.getMonth();
+  renderAll();
+}
+
+function deleteCounsel() {
+  if(!editCounselId||!confirm('이 상담 기록을 삭제하시겠습니까?'))return;
+  DB.counselings=DB.counselings.filter(x=>x.id!==editCounselId);
+  saveDBAndSync(); closeCounselModal(); renderAll();
+}
+
+// ================================================================
+// SCHEDULE FORM MODAL
+// ================================================================
+function updateSchedCategory() {
+  const cat=document.getElementById('sf-category').value;
+  const isPersonal=['absent','makeup'].includes(cat);
+  document.getElementById('sf-student-label').textContent=isPersonal?'학생 이름 *':'관련 학생 (선택)';
+  document.getElementById('sf-enddate-group').style.display=['event','notice'].includes(cat)?'':'none';
+  document.getElementById('sf-absent-info').style.display=cat==='absent'?'':'none';
+  document.getElementById('sf-makeup-link-group').style.display=cat==='makeup'?'':'none';
+  if(cat==='absent'){ updateAbsentLink(); setResolution('pending'); }
+  if(cat==='makeup') populateMakeupLink();
+}
+
+function setResolution(type) {
+  absentResolution=type;
+  document.getElementById('resBtnPending').className='res-btn'+(type==='pending'?' active-res':'');
+  document.getElementById('resBtnMakeup').className='res-btn'+(type==='makeup'?' active-makeup':'');
+  document.getElementById('resBtnFee').className='res-btn'+(type==='fee'?' active-fee':'');
+  document.getElementById('sf-fee-deduct-group').style.display=type==='fee'?'':'none';
+  // 원비 차감 선택 시 만료일 박스 숨김
+  const expBox=document.querySelector('#sf-absent-info > div:first-child');
+  if(expBox) expBox.style.display=type==='fee'?'none':'';
+}
+
+function updateAbsentLink() {
+  const cat=document.getElementById('sf-category').value;
+  if(cat!=='absent') return;
+  const date=document.getElementById('sf-date').value;
+  if(!date) return;
+  // 만료일 = 결석일 +1개월
+  const d=new Date(date+'T00:00:00');
+  d.setMonth(d.getMonth()+1);
+  const exp=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  document.getElementById('sf-makeup-deadline').textContent=exp;
+  document.getElementById('sf-absent-info').style.display='';
+}
+
+function populateMakeupLink() {
+  const studentName=document.getElementById('sf-student').value.trim();
+  const sel=document.getElementById('sf-makeup-link');
+  // 미보강 결석 건 목록
+  const pendingAbsents=DB.schedules.filter(s=>
+    s.category==='absent' &&
+    !s.makeupDone &&
+    (!studentName || s.studentName===studentName)
+  ).sort((a,b)=>b.date.localeCompare(a.date));
+  sel.innerHTML='<option value="">— 결석 건 선택 (선택사항) —</option>'+
+    pendingAbsents.map(s=>{
+      const exp=getExpiryDate(s.date);
+      const dLeft=daysLeft(exp);
+      return `<option value="${s.id}">${s.studentName||'?'} · ${s.date} 결석 (만료 ${exp}, ${dLeft>=0?dLeft+'일 남음':'소멸'}) </option>`;
+    }).join('');
+}
+
+function openSchedModal(id) {
+  editSchedId=id;
+  const s=id?DB.schedules.find(x=>x.id===id):null;
+  document.getElementById('schedModalTitle').textContent=s?'일정 수정':'일정 추가';
+  document.getElementById('sf-category').value=s?.category||'absent';
+  document.getElementById('sf-title').value=s?.title||'';
+  document.getElementById('sf-student').value=s?.studentName||'';
+  document.getElementById('sf-date').value=s?.date||selDate||today();
+  document.getElementById('sf-enddate').value=s?.endDate||'';
+  document.getElementById('sf-memo').value=s?.memo||'';
+  document.getElementById('btnSchedDel').style.display=s?'':'none';
+  document.getElementById('acBox2').innerHTML='';
+  // 결석 수정 시 기존 처리 방식 복원
+  absentResolution=s?.resolution||'pending';
+  document.getElementById('sf-fee-amount').value=s?.feeAmount||'';
+  document.getElementById('sf-fee-month').value=s?.feeMonth||'';
+  updateSchedCategory();
+  document.getElementById('schedModal').classList.add('open');
+}
+
+function closeSchedModal() { document.getElementById('schedModal').classList.remove('open'); }
+
+function saveSched() {
+  const title=document.getElementById('sf-title').value.trim();
+  const date=document.getElementById('sf-date').value;
+  const cat=document.getElementById('sf-category').value;
+  if(!title){alert('제목을 입력하세요.');return;}
+  if(!date){alert('날짜를 입력하세요.');return;}
+  const studentName=document.getElementById('sf-student').value.trim();
+  const userMemo=document.getElementById('sf-memo').value.trim();
+
+  // 결석 처리 방식 메모 자동 생성
+  let resolutionMemo='', feeAmount=0, feeMonth='';
+  if(cat==='absent'){
+    if(absentResolution==='makeup') resolutionMemo='[처리: 보강 예정]';
+    else if(absentResolution==='fee'){
+      feeAmount=Number(document.getElementById('sf-fee-amount').value)||0;
+      feeMonth=document.getElementById('sf-fee-month').value||'';
+      resolutionMemo=`[처리: 원비 차감${feeAmount?' '+feeAmount.toLocaleString()+'원':''}${feeMonth?' · '+feeMonth:''}]`;
+    } else resolutionMemo='[처리: 미정]';
+  }
+  const finalMemo=[userMemo,resolutionMemo].filter(Boolean).join(' ');
+
+  const isFeeDone=cat==='absent'&&absentResolution==='fee';
+  const obj={
+    id:editSchedId||uid(), category:cat, title, studentName, date,
+    endDate:document.getElementById('sf-enddate').value||null,
+    memo:finalMemo,
+    resolution:cat==='absent'?absentResolution:null,
+    feeAmount:isFeeDone?feeAmount:null,
+    feeMonth:isFeeDone?feeMonth:null,
+    makeupExpiry:cat==='absent'&&!isFeeDone?getExpiryDate(date):null,
+    makeupDone:editSchedId?(DB.schedules.find(x=>x.id===editSchedId)?.makeupDone||false):isFeeDone,
+    makeupLinkedId:null,
+    createdAt:editSchedId?(DB.schedules.find(x=>x.id===editSchedId)?.createdAt||Date.now()):Date.now()
+  };
+
+  // 결석 처리 내용을 학생 상담 이력에 자동 기록
+  if(cat==='absent'&&studentName&&resolutionMemo){
+    autoLogToStudent(studentName,date,resolutionMemo,userMemo);
+  }
+
+  // 보강 저장 시 결석 건에 완료 처리
+  if(cat==='makeup'){
+    const linkedId=document.getElementById('sf-makeup-link').value;
+    if(linkedId){
+      obj.makeupLinkedId=linkedId;
+      const absent=DB.schedules.find(x=>x.id===linkedId);
+      if(absent){absent.makeupDone=true;absent.makeupLinkedId=obj.id;absent.resolution='makeup';}
+    }
+  }
+
+  if(editSchedId){const i=DB.schedules.findIndex(x=>x.id===editSchedId);if(i!==-1)DB.schedules[i]=obj;}
+  else DB.schedules.push(obj);
+  saveDBAndSync();closeSchedModal();
+  selDate=date;const d=new Date(date+'T00:00:00');calYear=d.getFullYear();calMonth=d.getMonth();
+  renderAll();
+}
+
+// 학생 상담 이력에 결석 처리 내용 자동 메모
+function autoLogToStudent(studentName,date,resolutionMemo,userMemo){
+  const noteText=`📋 결석(${date}) ${resolutionMemo}${userMemo?' — '+userMemo:''}`;
+  const recent=DB.counselings
+    .filter(c=>c.studentName===studentName)
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+  if(recent){
+    recent.content=(recent.content?recent.content+'\n':'')+noteText;
+  } else {
+    DB.counselings.push({
+      id:uid(),type:'existing',studentName,
+      parentName:'',phone:'',date,
+      content:noteText,
+      result:'none',nextDate:null,
+      feedbackNeeded:false,feedbackMemo:'',feedbackDone:false,
+      checks:{},createdAt:Date.now()
+    });
+  }
+}
+
+function deleteSched() {
+  if(!editSchedId||!confirm('이 일정을 삭제하시겠습니까?'))return;
+  // 연결된 결석/보강 링크 해제
+  const s=DB.schedules.find(x=>x.id===editSchedId);
+  if(s?.makeupLinkedId) {
+    const linked=DB.schedules.find(x=>x.id===s.makeupLinkedId);
+    if(linked){ linked.makeupDone=false; linked.makeupLinkedId=null; }
+  }
+  DB.schedules=DB.schedules.filter(x=>x.id!==editSchedId);
+  saveDBAndSync(); closeSchedModal(); renderAll();
+}
+
+// ================================================================
+// STUDENT
+// ================================================================
+function setStudentFilter(f,el){
+  studentFilter=f;
+  document.querySelectorAll('#view-students .ftab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderStudents();
+}
+
+function setBusFilter(busVal){
+  // 사이드바 차량 통계 클릭 시 학생 DB로 이동하면서 필터 적용
+  studentFilter = 'bus-'+busVal;
+  // 탭 active 표시 업데이트
+  document.querySelectorAll('#view-students .ftab').forEach(t=>{
+    t.classList.remove('active');
+    if(t.getAttribute('onclick')&&t.getAttribute('onclick').includes("'bus-"+busVal+"'")) t.classList.add('active');
+  });
+  renderStudents();
+}
+const statusMap={active:{label:'재원중',cls:'sb-active'},pending:{label:'등록검토',cls:'sb-pending'},'new-reg':{label:'신규등록',cls:'sb-new-reg'},inactive:{label:'수강종료',cls:'sb-inactive'}};
+
+function renderStudents() {
+  const q=(document.getElementById('studentSearch').value||'').trim().toLowerCase();
+  let items=DB.students.filter(s=>{
+    if(studentFilter==='active'&&s.status!=='active') return false;
+    if(studentFilter==='pending'&&s.status!=='pending') return false;
+    if(studentFilter==='inactive'&&s.status!=='inactive') return false;
+    if(studentFilter==='bus-yes'&&s.bus!=='yes') return false;
+    if(studentFilter==='bus-check'&&s.bus!=='check') return false;
+    if(studentFilter==='bus-no'&&s.bus!=='no') return false;
+    if(q&&!s.name.toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+
+  // subtitle — 차량 필터일 때 설명 추가
+  let subtitle = `총 ${items.length}명`;
+  if(studentFilter==='bus-yes') subtitle = `🚌 차량 이용 ${items.length}명`;
+  else if(studentFilter==='bus-check') subtitle = `🚌 차량 확인 필요 ${items.length}명`;
+  else if(studentFilter==='bus-no') subtitle = `차량 미이용 ${items.length}명`;
+  document.getElementById('studentSubtitle').textContent = subtitle;
+  const g=document.getElementById('studentGrid');
+  if(!items.length){g.innerHTML='<div class="list-empty" style="grid-column:1/-1"><div class="empty-icon">🎓</div>등록된 학생이 없습니다</div>';return;}
+  g.innerHTML=items.map(s=>{
+    const st=statusMap[s.status]||{label:'',cls:''};
+    const cnt=DB.counselings.filter(c=>c.studentName===s.name).length;
+    return `<div class="student-card" onclick="openStudentDetail('${s.id}')">
+      <div class="student-top">
+        <div class="s-avatar ${s.status==='active'?'av-existing':'av-new'}">${s.name.slice(-2)}</div>
+        <div><div class="s-name">${s.name} <span class="status-badge ${st.cls}">${st.label}</span></div>
+        <div class="s-sub">${s.grade||''}${s.parentName?' · '+s.parentName:''}</div></div>
+      </div>
+      <div class="s-fields">
+        ${s.phone?`<div class="sf"><span class="sf-l">연락처</span><span class="sf-v">${s.phone}</span></div>`:''}
+        ${s.subject?`<div class="sf"><span class="sf-l">과목</span><span class="sf-v">${s.subject}</span></div>`:''}
+        ${s.classTime?`<div class="sf"><span class="sf-l">수업</span><span class="sf-v">${s.classTime}</span></div>`:''}
+        ${s.weeklyCount?`<div class="sf"><span class="sf-l">횟수</span><span class="sf-v">주 ${s.weeklyCount}회</span></div>`:''}
+        ${s.bus?`<div class="sf"><span class="sf-l">차량</span><span class="sf-v">${s.bus==='yes'?'이용':s.bus==='no'?'미이용':'확인필요'}</span></div>`:''}
+        <div class="sf"><span class="sf-l">상담</span><span class="sf-v">${cnt}회</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openStudentModal(id) {
+  editStudentId=id;
+  const s=id?DB.students.find(x=>x.id===id):null;
+  document.getElementById('studentModalTitle').textContent=s?'학생 정보 수정':'학생 등록';
+  ['name','grade','parent','phone','subject','time','bus','fee','enroll','status','memo'].forEach(f=>{
+    const el=document.getElementById('smf-'+f);
+    if(el) el.value=s?.[f==='name'?'name':f==='parent'?'parentName':f==='time'?'classTime':f==='status'?'status':f==='enroll'?'enrollDate':f]||'';
+  });
+  // manual fields
+  if(s){
+    document.getElementById('smf-name').value=s.name||'';
+    document.getElementById('smf-grade').value=s.grade||'';
+    document.getElementById('smf-parent').value=s.parentName||'';
+    document.getElementById('smf-phone').value=s.phone||'';
+    document.getElementById('smf-subject').value=s.subject||'';
+    document.getElementById('smf-time').value=s.classTime||'';
+    document.getElementById('smf-weeklyCount').value=s.weeklyCount||'';
+    document.getElementById('smf-bus').value=s.bus||'';
+    document.getElementById('smf-fee').value=s.fee||'';
+    document.getElementById('smf-enroll').value=s.enrollDate||'';
+    document.getElementById('smf-status').value=s.status||'active';
+    document.getElementById('smf-memo').value=s.memo||'';
+  } else {
+    ['name','parent','phone','subject','time','fee','memo'].forEach(f=>{ const e=document.getElementById('smf-'+f); if(e)e.value=''; });
+    document.getElementById('smf-grade').value='';
+    document.getElementById('smf-weeklyCount').value='';
+    document.getElementById('smf-bus').value='';
+    document.getElementById('smf-enroll').value='';
+    document.getElementById('smf-status').value='active';
+  }
+  document.getElementById('btnStudentDel').style.display=s?'':'none';
+  document.getElementById('studentModal').classList.add('open');
+}
+
+function closeStudentModal(){document.getElementById('studentModal').classList.remove('open');}
+
+function saveStudent() {
+  const name=document.getElementById('smf-name').value.trim();
+  if(!name){alert('학생 이름을 입력하세요.');return;}
+  const obj={
+    id:editStudentId||uid(), name,
+    grade:document.getElementById('smf-grade').value,
+    parentName:document.getElementById('smf-parent').value.trim(),
+    phone:document.getElementById('smf-phone').value.trim(),
+    subject:document.getElementById('smf-subject').value.trim(),
+    classTime:document.getElementById('smf-time').value.trim(),
+    weeklyCount:document.getElementById('smf-weeklyCount').value,
+    bus:document.getElementById('smf-bus').value,
+    fee:document.getElementById('smf-fee').value.trim(),
+    enrollDate:document.getElementById('smf-enroll').value,
+    status:document.getElementById('smf-status').value,
+    memo:document.getElementById('smf-memo').value.trim(),
+    createdAt:editStudentId?(DB.students.find(x=>x.id===editStudentId)?.createdAt||Date.now()):Date.now()
+  };
+  if(editStudentId){const i=DB.students.findIndex(x=>x.id===editStudentId);if(i!==-1)DB.students[i]=obj;}
+  else DB.students.push(obj);
+  saveDBAndSync(); closeStudentModal(); renderAll();
+}
+
+function deleteStudent(){
+  if(!editStudentId||!confirm('이 학생 정보를 삭제하시겠습니까?'))return;
+  DB.students=DB.students.filter(x=>x.id!==editStudentId);
+  saveDBAndSync(); closeStudentModal(); renderAll();
+}
+
+function openStudentDetail(sid) {
+  const s=DB.students.find(x=>x.id===sid); if(!s)return;
+  const st=statusMap[s.status]||{label:'',cls:''};
+  const counsels=DB.counselings.filter(c=>c.studentName===s.name).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const absentScheds=DB.schedules.filter(sc=>sc.studentName===s.name&&sc.category==='absent').sort((a,b)=>b.date.localeCompare(a.date));
+  const makeupScheds=DB.schedules.filter(sc=>sc.studentName===s.name&&sc.category==='makeup').sort((a,b)=>b.date.localeCompare(a.date));
+  const absent=absentScheds.length;
+  const makeup=makeupScheds.length;
+  const feeDeductCount=absentScheds.filter(sc=>sc.resolution==='fee').length;
+
+  const infoRows=[
+    ['학년',s.grade],['학부모',s.parentName],['연락처',s.phone],
+    ['과목',s.subject],['수업',s.classTime],
+    ['주 수강',s.weeklyCount?`주 ${s.weeklyCount}회`:''],
+    ['차량',s.bus==='yes'?'이용':s.bus==='no'?'미이용':s.bus==='check'?'확인필요':''],
+    ['수강료',s.fee],['등록일',s.enrollDate]
+  ].filter(r=>r[1]).map(r=>`<div class="info-row"><span class="info-l">${r[0]}</span><span class="info-v">${r[1]}</span></div>`).join('');
+
+  // 상담 타임라인
+  const tl=counsels.length
+    ?counsels.map(c=>{
+      const done=c.checks?Object.values(c.checks).filter(Boolean).length:0;
+      const tot=c.checks?Object.keys(c.checks).length:0;
+      const fb=c.feedbackNeeded&&!c.feedbackDone;
+      return `<div class="tl-item">
+        <div class="tl-dot ${c.type}"></div>
+        <div class="tl-content" onclick="openCounselModal('${c.id}');closeStudentDetail()">
+          <div class="tl-date">${c.date} · ${c.type==='new'?'신규':c.type==='existing'?'재원':'체험'} · ${c.result==='enrolled'?'등록완료':c.result==='pending'?'보류':'미결정'}${fb?' · 💬 피드백필요':''}</div>
+          <div class="tl-text" style="white-space:pre-line">${c.content||'(내용 없음)'}</div>
+          ${tot>0?`<div style="margin-top:3px;font-size:10px;color:var(--text3)">체크 ${done}/${tot}</div>`:''}
+        </div>
+      </div>`;
+    }).join('')
+    :'<div style="font-size:12px;color:var(--text3);padding:8px 0">상담 기록이 없습니다</div>';
+
+  // 출결 타임라인
+  const resLabel={pending:'⏳ 미정',makeup:'🟠 보강 예정',fee:'💰 원비 차감'};
+  const resCls={pending:'rp-pending',makeup:'rp-makeup',fee:'rp-fee'};
+  const resDotCls={pending:'pending',makeup:'makeup',fee:'fee'};
+  const attTl=absentScheds.length
+    ?absentScheds.map(sc=>{
+      const linkedMakeup=DB.schedules.find(x=>x.id===sc.makeupLinkedId);
+      const res=sc.resolution||'pending';
+      const statusLabel=sc.makeupDone
+        ?(res==='fee'?'💰 원비 차감 완료':'✅ 보강 완료')
+        :(sc.makeupExpiry&&daysLeft(sc.makeupExpiry)<0?'⛔ 소멸':'⏳ 보강 대기');
+      return `<div class="att-tl-item">
+        <div class="att-tl-dot ${resDotCls[res]}"></div>
+        <div class="att-tl-content">
+          <div class="att-tl-date">
+            ${sc.date} 결석
+            <span class="res-pill ${resCls[res]}">${resLabel[res]||'미정'}</span>
+            ${sc.feeAmount?`<span class="res-pill rp-fee">${sc.feeAmount.toLocaleString()}원${sc.feeMonth?' · '+sc.feeMonth:''}</span>`:''}
+          </div>
+          <div class="att-tl-body">
+            ${sc.memo?sc.memo+'<br>':''}
+            <span style="font-size:10px;font-weight:700;color:${sc.makeupDone?'var(--c-existing)':'var(--text2)'}">${statusLabel}</span>
+            ${linkedMakeup?`<span style="font-size:10px;color:var(--text3)"> → 보강일: ${linkedMakeup.date}</span>`:''}
+            ${sc.makeupExpiry&&!sc.makeupDone?`<span style="font-size:10px;color:${daysLeft(sc.makeupExpiry)<=7?'var(--overdue)':'var(--text3)'}"> · 만료: ${sc.makeupExpiry}${daysLeft(sc.makeupExpiry)>=0?` (D-${daysLeft(sc.makeupExpiry)})`:' (소멸)'}</span>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('')
+    :'<div style="font-size:12px;color:var(--text3);padding:8px 0">결석 기록이 없습니다</div>';
+
+  document.getElementById('studentDetailBody').innerHTML=`
+    <div class="detail-tabs">
+      <div class="dtab active" onclick="switchTab(this,'dtab-info')">기본 정보</div>
+      <div class="dtab" onclick="switchTab(this,'dtab-att')">출결 이력 (${absent})</div>
+      <div class="dtab" onclick="switchTab(this,'dtab-hist')">상담 이력 (${counsels.length})</div>
+    </div>
+    <div class="s-header-card">
+      <div class="s-avatar ${s.status==='active'?'av-existing':'av-new'}" style="width:42px;height:42px;font-size:15px">${s.name.slice(-2)}</div>
+      <div>
+        <div class="s-name-big">${s.name} <span class="status-badge ${st.cls}">${st.label}</span></div>
+        <div class="s-meta-sm">${s.grade||''}${s.parentName?' · 학부모: '+s.parentName:''}</div>
+        <div class="s-meta-sm">
+          결석 ${absent}회 · 보강 ${makeup}회 · 원비차감 ${feeDeductCount}회 · 상담 ${counsels.length}회
+        </div>
+      </div>
+      <button class="btn-top" style="margin-left:auto" onclick="closeStudentDetail();openStudentModal('${s.id}')">수정</button>
+    </div>
+    <div class="tab-panel active" id="dtab-info">
+      <div class="info-grid">${infoRows}</div>
+      ${s.memo?`<div style="padding:9px 11px;background:var(--surface2);border-radius:var(--rs);font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:11px">${s.memo}</div>`:''}
+      <button class="btn-add" onclick="closeStudentDetail();selDate=today();openCounselModal(null);document.getElementById('cf-student').value='${s.name}';document.getElementById('cf-parent').value='${s.parentName||''}';document.getElementById('cf-phone').value='${s.phone||''}';counselType='${s.status==='active'?'existing':'new'}';updateCounselTypeButtons()">+ 상담 기록 추가</button>
+    </div>
+    <div class="tab-panel" id="dtab-att">
+      <div style="position:relative">
+        <div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)"></div>
+        ${attTl}
+      </div>
+    </div>
+    <div class="tab-panel" id="dtab-hist">
+      <div class="timeline">${tl}</div>
+    </div>`;
+  document.getElementById('studentDetailModal').classList.add('open');
+}
+
+function switchTab(el,pid){
+  const body=document.getElementById('studentDetailBody');
+  body.querySelectorAll('.dtab').forEach(t=>t.classList.remove('active'));
+  body.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  const p=document.getElementById(pid); if(p)p.classList.add('active');
+}
+
+function closeStudentDetail(){document.getElementById('studentDetailModal').classList.remove('open');}
+
+// ================================================================
+// CHECKLIST TEMPLATES
+// ================================================================
+function renderTemplates() {
+  const el=document.getElementById('tmplList'); if(!el)return;
+  el.innerHTML=DB.templates.length
+    ?DB.templates.map(t=>`<div class="tmpl-item"><span>${t.label}</span><button class="tmpl-del" onclick="removeTemplate('${t.id}')">×</button></div>`).join('')
+    :'<div style="font-size:12px;color:var(--text3);padding:4px 0">등록된 항목이 없습니다</div>';
+}
+function addTemplate(){
+  const inp=document.getElementById('tmplInput'); const v=inp.value.trim(); if(!v)return;
+  DB.templates.push({id:uid(),label:v}); inp.value=''; saveDBAndSync(); renderTemplates();
+}
+function removeTemplate(id){DB.templates=DB.templates.filter(t=>t.id!==id);saveDBAndSync();renderTemplates();}
+
+// ================================================================
+// AUTOCOMPLETE
+// ================================================================
+function acSearch(val, inputId, boxId) {
+  const box=document.getElementById(boxId);
+  if(!val.trim()){box.innerHTML='';return;}
+  const matches=DB.students.filter(s=>s.name.includes(val)).slice(0,5);
+  if(!matches.length){box.innerHTML='';return;}
+  box.innerHTML=`<div class="ac-box">`+matches.map(s=>`<div class="ac-item" onclick="fillStudent('${s.id}','${inputId}','${boxId}')">${s.name} <span style="color:var(--text3)">${s.grade||''} · ${s.parentName||''}</span></div>`).join('')+'</div>';
+}
+function fillStudent(sid,inputId,boxId){
+  const s=DB.students.find(x=>x.id===sid); if(!s)return;
+  document.getElementById(inputId).value=s.name;
+  document.getElementById(boxId).innerHTML='';
+  if(inputId==='cf-student'){
+    document.getElementById('cf-parent').value=s.parentName||'';
+    document.getElementById('cf-phone').value=s.phone||'';
+    counselType=s.status==='active'?'existing':'new';
+    updateCounselTypeButtons();
+  }
+}
+
+// ================================================================
+// DATA MANAGEMENT (JSON Save / Load)
+// ================================================================
+function saveJSON() {
+  DB.savedAt = new Date().toISOString();
+  saveDB();
+  const json=JSON.stringify(DB,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const d=new Date(); a.download=`counselog_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
+  a.click();
+  updateSaveInfo();
+}
+
+function quickSaveJSON() { saveJSON(); }
+
+function loadFromFile(input) {
+  const file=input.files[0]; if(!file)return;
+  if(!confirm('현재 데이터를 이 파일로 덮어씌웁니다.\n먼저 현재 데이터를 저장하셨나요?')){input.value='';return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try {
+      const parsed=JSON.parse(e.target.result);
+      if(!parsed.counselings&&!parsed.students){alert('올바른 CounseLog 파일이 아닙니다.');return;}
+      DB=parsed;
+      if(!DB.templates) DB.templates=[];
+      if(!DB.schedules) DB.schedules=[];
+      saveDB(); renderAll();
+      alert('데이터를 성공적으로 불러왔습니다!');
+    } catch(err){alert('파일을 읽을 수 없습니다. JSON 형식을 확인하세요.');}
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+
+function setupDropZone() {
+  const dz=document.getElementById('dropZone');
+  if(!dz)return;
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',e=>{
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const file=e.dataTransfer.files[0]; if(!file||!file.name.endsWith('.json'))return;
+    if(!confirm('현재 데이터를 이 파일로 덮어씌웁니다. 계속할까요?'))return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try {
+        const parsed=JSON.parse(ev.target.result);
+        DB=parsed; if(!DB.templates)DB.templates=[]; if(!DB.schedules)DB.schedules=[];
+        saveDB(); renderAll(); alert('데이터를 성공적으로 불러왔습니다!');
+      } catch(err){alert('파일 형식이 올바르지 않습니다.');}
+    };
+    reader.readAsText(file);
+  });
+}
+
+function resetData() {
+  if(!confirm('정말로 모든 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.\n\n먼저 JSON 파일로 저장하셨나요?'))return;
+  if(!confirm('마지막 확인입니다. 모든 데이터가 삭제됩니다.'))return;
+  DB={version:'3.0',savedAt:null,counselings:[],students:[],schedules:[],templates:[],todos:[]};
+  localStorage.removeItem('counselog_v3');
+  saveDB(); renderAll(); alert('데이터가 초기화되었습니다.');
+}
+
+// ================================================================
+// ATTENDANCE (출결 관리)
+// ================================================================
+function getExpiryDate(absentDate) {
+  const d=new Date(absentDate+'T00:00:00');
+  d.setMonth(d.getMonth()+1);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+
+function daysLeft(expiryDate) {
+  const t=new Date(today()+'T00:00:00');
+  const e=new Date(expiryDate+'T00:00:00');
+  return Math.ceil((e-t)/(1000*60*60*24));
+}
+
+function renderAttendance() {
+  const absents=DB.schedules.filter(s=>s.category==='absent').sort((a,b)=>b.date.localeCompare(a.date));
+  const makeups=DB.schedules.filter(s=>s.category==='makeup').sort((a,b)=>b.date.localeCompare(a.date));
+  const needed=absents.filter(s=>!s.makeupDone);
+  const done=absents.filter(s=>s.makeupDone);
+  const t=today();
+
+  document.getElementById('attSubtitle').textContent=
+    `결석 총 ${absents.length}건 · 보강 필요 ${needed.length}건 · 완료 ${done.length}건`;
+  document.getElementById('makeupNeededCount').textContent=`${needed.length}건`;
+  document.getElementById('makeupDoneCount').textContent=`${done.length}건`;
+
+  // 소멸 임박 알림 (7일 이내)
+  const expiring=needed.filter(s=>s.makeupExpiry&&daysLeft(s.makeupExpiry)<=7&&daysLeft(s.makeupExpiry)>=0);
+  const expired=needed.filter(s=>s.makeupExpiry&&daysLeft(s.makeupExpiry)<0);
+  const alertEl=document.getElementById('expiryAlert');
+  if(expiring.length||expired.length) {
+    alertEl.innerHTML=`<div class="expiry-alert-box">
+      <div class="expiry-alert-title">🚨 보강 소멸 임박 / 소멸</div>
+      ${expired.length?`<div style="font-size:12px;color:var(--overdue);font-weight:700;margin-bottom:6px">⛔ 기간 소멸 (${expired.length}건) — 학부모 안내 필요</div>`:''}
+      ${expired.map(s=>`<div style="font-size:12px;color:var(--overdue);padding:3px 0">· ${s.studentName||'?'} · ${s.date} 결석 → 만료일 ${s.makeupExpiry} <button class="btn-att-action" onclick="openSchedModal('${s.id}')">확인</button></div>`).join('')}
+      ${expiring.length?`<div style="font-size:12px;color:var(--pending-color);font-weight:700;margin:6px 0 4px">⏰ 7일 이내 소멸 (${expiring.length}건)</div>`:''}
+      ${expiring.map(s=>{const dl=daysLeft(s.makeupExpiry);return `<div style="font-size:12px;color:var(--pending-color);padding:3px 0">· ${s.studentName||'?'} · ${s.date} 결석 → D-${dl} (${s.makeupExpiry}까지) <button class="btn-att-action" onclick="openSchedModal(null);setTimeout(()=>{document.getElementById('sf-category').value='makeup';updateSchedCategory();document.getElementById('sf-student').value='${s.studentName}';document.getElementById('sf-makeup-link').value='${s.id}';},50)">보강 입력</button></div>`; }).join('')}
+    </div>`;
+  } else {
+    alertEl.innerHTML='';
+  }
+
+  // 보강 필요 목록
+  const nl=document.getElementById('makeupNeededList');
+  if(!needed.length){nl.innerHTML='<div class="daily-empty">보강이 필요한 결석이 없습니다 ✅</div>';return;}
+  nl.innerHTML=needed.map(s=>{
+    const exp=s.makeupExpiry||getExpiryDate(s.date);
+    const dl=daysLeft(exp);
+    const cls=dl<0?'expired':dl<=3?'days-critical':dl<=7?'days-warn':'days-ok';
+    const label=dl<0?'소멸':dl===0?'오늘 만료':`D-${dl}`;
+    const cardCls=dl<0?'expiry-warn':dl<=3?'expiry-critical':'';
+    // 학생 주 수강 횟수
+    const stu=DB.students.find(x=>x.name===s.studentName);
+    const weekly=stu?.weeklyCount?`주 ${stu.weeklyCount}회`:'';
+    return `<div class="att-card ${cardCls}">
+      <div class="att-badge absent">🔴</div>
+      <div class="att-body">
+        <div class="att-name">
+          ${s.studentName||'?'}
+          ${weekly?`<span style="font-size:10px;background:var(--primary-light);color:var(--primary);padding:1px 6px;border-radius:4px;font-weight:700">${weekly}</span>`:''}
+          <span class="days-badge ${cls}">${label}</span>
+        </div>
+        <div class="att-meta">
+          <span>결석일: ${s.date}</span>
+          <span>보강 만료: ${exp}</span>
+          ${s.memo?`<span>메모: ${s.memo}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <button class="btn-att-action" onclick="openSchedModal('${s.id}')">수정</button>
+        <button class="btn-att-action" style="background:var(--c-makeup-bg);border-color:var(--c-makeup);color:var(--c-makeup)" onclick="quickMakeup('${s.id}','${s.studentName}')">보강 입력</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // 보강 완료 / 원비 차감 완료 목록
+  const dl2=document.getElementById('makeupDoneList');
+  if(!done.length){dl2.innerHTML='<div class="daily-empty">처리 완료된 결석이 없습니다</div>';return;}
+  dl2.innerHTML=done.slice(0,10).map(s=>{
+    const linkedMakeup=DB.schedules.find(x=>x.id===s.makeupLinkedId);
+    const isFee=s.resolution==='fee';
+    const badge=isFee
+      ?`<span class="days-badge days-ok">💰 원비차감</span>`
+      :`<span class="days-badge days-ok">✅ 보강완료</span>`;
+    return `<div class="att-card makeup-done">
+      <div class="att-badge makeup">${isFee?'💰':'✅'}</div>
+      <div class="att-body">
+        <div class="att-name">${s.studentName||'?'} ${badge}</div>
+        <div class="att-meta">
+          <span>결석: ${s.date}</span>
+          ${isFee&&s.feeAmount?`<span>차감: ${s.feeAmount.toLocaleString()}원${s.feeMonth?' ('+s.feeMonth+')':''}</span>`:''}
+          ${linkedMakeup?`<span>보강일: ${linkedMakeup.date}</span>`:''}
+        </div>
+      </div>
+      <button class="btn-att-action" onclick="openSchedModal('${s.id}')">상세</button>
+    </div>`;
+  }).join('')+(done.length>10?`<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px">외 ${done.length-10}건</div>`:'');
+}
+
+// 보강 빠른 입력 (결석 카드에서 바로)
+function quickMakeup(absentId, studentName) {
+  openSchedModal(null);
+  setTimeout(()=>{
+    document.getElementById('sf-category').value='makeup';
+    updateSchedCategory();
+    document.getElementById('sf-student').value=studentName||'';
+    document.getElementById('sf-date').value=today();
+    document.getElementById('sf-title').value=(studentName||'')+'보강';
+    // 자동으로 결석 건 선택
+    populateMakeupLink();
+    setTimeout(()=>{ document.getElementById('sf-makeup-link').value=absentId; },100);
+  },50);
+}
+// ================================================================
+const TODO_CAT = {
+  admin:{label:'행정',cls:'tc-admin'},
+  payment:{label:'수납',cls:'tc-payment'},
+  class:{label:'수업',cls:'tc-class'},
+  parent:{label:'연락',cls:'tc-parent'},
+  etc:{label:'기타',cls:'tc-etc'}
+};
+
+let sideTodoFilter = 'pending';
+
+function setSideTodoFilter(f, el) {
+  sideTodoFilter = f;
+  document.querySelectorAll('.stodo-ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderSideTodo();
+}
+
+function toggleSideTodoForm() {
+  const w = document.getElementById('stodoAddWrap');
+  if (!w) return;
+  const isOpen = w.style.display !== 'none';
+  w.style.display = isOpen ? 'none' : '';
+  if (!isOpen) document.getElementById('stodoInp').focus();
+}
+
+function addSideTodo() {
+  const text = document.getElementById('stodoInp').value.trim();
+  if (!text) return;
+  DB.todos.push({
+    id: uid(), text,
+    category: document.getElementById('stodoCat').value,
+    dueDate: document.getElementById('stodoDue').value || null,
+    done: false, doneAt: null, createdAt: Date.now()
+  });
+  document.getElementById('stodoInp').value = '';
+  document.getElementById('stodoDue').value = '';
+  saveDBAndSync(); renderSideTodo(); renderTodos2();
+}
+
+function toggleSideTodo(id, e) {
+  e.stopPropagation();
+  const td = DB.todos.find(x=>x.id===id); if (!td) return;
+  td.done = !td.done; td.doneAt = td.done ? Date.now() : null;
+  saveDBAndSync(); renderSideTodo(); renderTodos2();
+}
+
+function deleteSideTodo(id, e) {
+  e.stopPropagation();
+  if (!confirm('삭제하시겠습니까?')) return;
+  DB.todos = DB.todos.filter(x=>x.id!==id);
+  saveDBAndSync(); renderSideTodo(); renderTodos2();
+}
+
+function renderSideTodo() {
+  const t = today();
+  const all = DB.todos;
+  const pending = all.filter(x=>!x.done).length;
+  const done = all.filter(x=>x.done).length;
+  const total = all.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  const badge = document.getElementById('stodoBadge');
+  if (badge) { badge.textContent = pending; badge.className = 'stodo-badge'+(pending===0?' all-done':''); }
+  const pf = document.getElementById('stodoProgFill'); if(pf) pf.style.width = pct+'%';
+  const pt = document.getElementById('stodoProgTxt'); if(pt) pt.textContent = `${done} / ${total} 완료`;
+  const pp = document.getElementById('stodoProgPct'); if(pp) pp.textContent = pct+'%';
+
+  const items = all.filter(td=>{
+    if(sideTodoFilter==='pending') return !td.done;
+    if(sideTodoFilter==='done') return td.done;
+    return true;
+  }).sort((a,b)=>{
+    if(a.done!==b.done) return a.done?1:-1;
+    if(a.dueDate&&b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if(a.dueDate) return -1; if(b.dueDate) return 1;
+    return b.createdAt-a.createdAt;
+  });
+
+  const el = document.getElementById('stodoList'); if (!el) return;
+  if (!items.length) { el.innerHTML = `<div class="stodo-empty">${sideTodoFilter==='done'?'완료된 항목 없음':'할 일이 없어요 🎉'}</div>`; return; }
+
+  el.innerHTML = items.map(td=>{
+    const cat = TODO_CAT[td.category]||TODO_CAT.etc;
+    const isOv = td.dueDate && td.dueDate<t && !td.done;
+    const isTod = td.dueDate && td.dueDate===t && !td.done;
+    let dueTxt = '';
+    if (td.dueDate) {
+      const cls = isOv?'s-ov':isTod?'s-today':'';
+      const pre = isOv?'⚠ ':isTod?'오늘 ':'';
+      dueTxt = `<div class="stodo-due ${cls}">${pre}${td.dueDate}</div>`;
+    }
+    return `<div class="stodo-item${td.done?' s-done':''}">
+      <input type="checkbox" class="stodo-cb" ${td.done?'checked':''} onclick="toggleSideTodo('${td.id}',event)">
+      <div class="stodo-body">
+        <div class="stodo-text${td.done?' s-done-txt':''}">${td.text}</div>
+        <div style="display:flex;gap:4px;align-items:center;margin-top:2px">
+          <span class="todo-cat ${cat.cls}" style="font-size:9px;padding:1px 4px">${cat.label}</span>
+          ${dueTxt}
+        </div>
+      </div>
+      <button class="stodo-del" onclick="deleteSideTodo('${td.id}',event)">×</button>
+    </div>`;
+  }).join('');
+}
+
+// ── keep old renderTodos / renderTodos2 for the full-page todos view ──
+function setTodoFilter(f,el){
+  sideTodoFilter=f;
+  renderSideTodo();
+}
+function setTodoFilter2(f,el){
+  todoFilter2=f;
+  document.querySelectorAll('#view-todos .todo-ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTodos2();
+}
+
+function getTodoItems(filter){
+  const t=today();
+  return DB.todos.filter(td=>{
+    if(filter==='pending') return !td.done;
+    if(filter==='done') return td.done;
+    if(['admin','payment','class','parent','etc'].includes(filter)) return td.category===filter&&!td.done;
+    return true;
+  }).sort((a,b)=>{
+    if(a.done!==b.done) return a.done?1:-1;
+    if(a.dueDate&&b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if(a.dueDate) return -1; if(b.dueDate) return 1;
+    return b.createdAt-a.createdAt;
+  });
+}
+
+function todoItemHtml(td){
+  const t=today();
+  const cat=TODO_CAT[td.category]||TODO_CAT.etc;
+  let dueHtml='';
+  if(td.dueDate){
+    const isOv=td.dueDate<t&&!td.done;
+    const isTod=td.dueDate===t&&!td.done;
+    const cls=isOv?'overdue':isTod?'today-due':'';
+    const prefix=isOv?'⚠ 마감':isTod?'오늘 마감':'마감';
+    dueHtml=`<span class="todo-due ${cls}">${prefix} ${td.dueDate}</span>`;
+  }
+  return `<div class="todo-item${td.done?' done-item':''}">
+    <input type="checkbox" class="todo-cb" ${td.done?'checked':''} onclick="toggleSideTodo('${td.id}',event)">
+    <div class="todo-body">
+      <div class="todo-text${td.done?' done-text':''}">${td.text}</div>
+      <div class="todo-meta">
+        <span class="todo-cat ${cat.cls}">${cat.label}</span>
+        ${dueHtml}
+      </div>
+    </div>
+    <button class="todo-del" onclick="deleteSideTodo('${td.id}',event)">×</button>
+  </div>`;
+}
+
+function renderTodos(){ renderSideTodo(); }
+
+function renderTodos2(){
+  const items=getTodoItems(todoFilter2||'all');
+  const all=DB.todos;
+  const done=all.filter(t=>t.done).length;
+  const total=all.length;
+  const pct=total?Math.round(done/total*100):0;
+  const pf=document.getElementById('todoProgFill2'); if(pf) pf.style.width=pct+'%';
+  const pt=document.getElementById('todoProgText2'); if(pt) pt.textContent=`${done} / ${total} 완료`;
+  const pp=document.getElementById('todoProgPct2'); if(pp) pp.textContent=pct+'%';
+  const el=document.getElementById('todoList2'); if(!el) return;
+  el.innerHTML=items.length?items.map(todoItemHtml).join(''):'<div class="todo-empty">할 일이 없습니다 🎉</div>';
+  const sub=document.getElementById('todoSubtitle');
+  if(sub) sub.textContent=`전체 ${total}건 · 미완료 ${all.filter(t=>!t.done).length}건`;
+}
+
+function openTodoForm(){ toggleSideTodoForm(); }
+function closeTodoForm(){ toggleSideTodoForm(); }
+function saveTodo(){ addSideTodo(); }
+function saveTodo2(){
+  const text=document.getElementById('todoInp2').value.trim();
+  if(!text) return;
+  DB.todos.push({
+    id:uid(), text,
+    category:document.getElementById('todoCat2').value,
+    dueDate:document.getElementById('todoDue2').value||null,
+    done:false, doneAt:null, createdAt:Date.now()
+  });
+  document.getElementById('todoInp2').value='';
+  document.getElementById('todoDue2').value='';
+  saveDBAndSync(); renderSideTodo(); renderTodos2();
+}
+// ================================================================
+// GITHUB GIST 동기화
+// ================================================================
+const GIST_LS = 'counselog_gist_config';
+
+function getGistConfig() {
+  try { return JSON.parse(localStorage.getItem(GIST_LS)||'{}'); } catch(e){ return {}; }
+}
+
+function loadGistConfig() {
+  const cfg = getGistConfig();
+  const gistId = document.getElementById('gistIdInput');
+  const gistToken = document.getElementById('gistTokenInput');
+  if(gistId) gistId.value = cfg.id||'';
+  if(gistToken) gistToken.value = cfg.token||'';
+}
+
+function saveGistConfig() {
+  const id = (document.getElementById('gistIdInput').value||'').trim();
+  const token = (document.getElementById('gistTokenInput').value||'').trim();
+  if(!id||!token){ alert('Gist ID와 GitHub Token을 모두 입력하세요.'); return; }
+  localStorage.setItem(GIST_LS, JSON.stringify({id, token}));
+  setGistStatus('✅ 설정이 저장되었습니다! 이제 앱을 열 때마다 자동으로 데이터를 불러옵니다.', 'var(--c-existing)');
+  updateSaveInfo();
+}
+
+function setGistStatus(msg, color) {
+  const el = document.getElementById('gistStatus');
+  if(el){ el.textContent = msg; el.style.color = color||'var(--text2)'; }
+}
+
+function setSyncDot(state) {
+  // state: 'ok' | 'syncing' | 'err' | ''
+  const dot = document.getElementById('saveDot');
+  if(!dot) return;
+  if(state==='ok') dot.className='save-dot ok';
+  else if(state==='err') dot.className='save-dot warn';
+  else dot.className='save-dot';
+}
+
+// ⬆️ Gist에 현재 데이터 업로드
+async function pushToGist() {
+  const cfg = getGistConfig();
+  if(!cfg.id||!cfg.token){
+    alert('먼저 데이터 관리 화면에서 Gist ID와 GitHub Token을 설정해 주세요.');
+    showView('data'); return;
+  }
+  setGistStatus('⏳ 업로드 중...', 'var(--text2)');
+  setSyncDot('syncing');
+  try {
+    const payload = { files: { 'counselog_data.json': { content: JSON.stringify(DB) } } };
+    const res = await fetch(`https://api.github.com/gists/${cfg.id}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('업로드 실패 ('+res.status+')');
+    DB.savedAt = new Date().toISOString();
+    saveDB();
+    setSyncDot('ok');
+    setGistStatus('✅ 업로드 완료! ' + new Date().toLocaleTimeString('ko-KR'), 'var(--c-existing)');
+    updateSaveInfo();
+  } catch(e) {
+    setSyncDot('err');
+    setGistStatus('❌ 업로드 실패: '+e.message, 'var(--overdue)');
+  }
+}
+
+// ⬇️ Gist에서 데이터 불러오기
+async function pullFromGist(silent=false) {
+  const cfg = getGistConfig();
+  if(!cfg.id||!cfg.token){
+    if(!silent) alert('먼저 데이터 관리 화면에서 Gist ID와 GitHub Token을 설정해 주세요.');
+    if(!silent) showView('data');
+    insertSample(); renderAll(); return;
+  }
+  if(!silent) setGistStatus('⏳ 불러오는 중...', 'var(--text2)');
+  setSyncDot('syncing');
+  try {
+    const res = await fetch(`https://api.github.com/gists/${cfg.id}`, {
+      headers: { 'Authorization': `token ${cfg.token}` }
+    });
+    if(!res.ok) throw new Error('불러오기 실패 ('+res.status+')');
+    const json = await res.json();
+    const content = json.files?.['counselog_data.json']?.content;
+    if(!content) throw new Error('데이터 파일을 찾을 수 없습니다');
+    const parsed = JSON.parse(content);
+    // 빈 데이터({})면 샘플 삽입
+    if(!parsed.counselings && !parsed.students && !parsed.schedules) {
+      insertSample();
+    } else {
+      DB = { ...DB, ...parsed };
+      if(!DB.todos) DB.todos = [];
+      if(!DB.categories) DB.categories = { academy:[], home:[] };
+      saveDB();
+    }
+    setSyncDot('ok');
+    if(!silent) setGistStatus('✅ 불러오기 완료! ' + new Date().toLocaleTimeString('ko-KR'), 'var(--c-existing)');
+    renderAll();
+  } catch(e) {
+    setSyncDot('err');
+    if(!silent) setGistStatus('❌ 불러오기 실패: '+e.message, 'var(--overdue)');
+    // 실패해도 로컬 데이터로 계속 사용
+    insertSample();
+    renderAll();
+  }
+}
+
+// saveDB 할 때 자동으로 Gist에도 저장 (백그라운드)
+async function saveDBAndSync() {
+  saveDB();
+  const cfg = getGistConfig();
+  if(cfg.id && cfg.token) {
+    try {
+      const payload = { files: { 'counselog_data.json': { content: JSON.stringify(DB) } } };
+      await fetch(`https://api.github.com/gists/${cfg.id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      setSyncDot('ok');
+    } catch(e) { setSyncDot('err'); }
+  }
+}
+
+// ================================================================
+// VIEW SWITCHING
+// ================================================================
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  const vEl=document.getElementById('view-'+v); if(vEl)vEl.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===v));
+  document.querySelectorAll('.mob-item').forEach(el=>el.classList.toggle('active',el.dataset.mview===v));
+  if(v==='todos'){renderTodos2();}
+  if(v==='attendance'){renderAttendance();}
+  if(v==='counselList')renderCounselList();
+  if(v==='students')renderStudents();
+  if(v==='schedules')renderSchedList();
+  if(v==='overdue')renderOverdue();
+  if(v==='checktmpl')renderTemplates();
+  if(v==='data')updateSaveInfo();
+}
+
+// Close modals on overlay click
+['counselModal','schedModal','studentModal','studentDetailModal'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+});
+
+// ================================================================
+// SAMPLE DATA
+// ================================================================
+function insertSample() {
+  if(DB.counselings.length||DB.students.length||DB.schedules.length) return;
+  const off=n=>{const d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+  DB.templates=[
+    {id:uid(),label:'수업 시간 변경 여부 확인 후 안내'},
+    {id:uid(),label:'차량 운행 가능 여부 확인'},
+    {id:uid(),label:'수강료 안내 및 납부 방법'},
+    {id:uid(),label:'레벨 테스트 일정 안내'},
+    {id:uid(),label:'교재비 안내'},
+    {id:uid(),label:'다음 상담 일정 예약'},
+  ];
+  const tids=DB.templates.map(t=>t.id);
+  const chk=(...done)=>{const c={};tids.forEach((id,i)=>{c[id]=done.includes(i);});return c;};
+  DB.students=[
+    {id:uid(),name:'김민준',grade:'중2',parentName:'김영수',phone:'010-1234-5678',subject:'수채화',classTime:'월수금 4시',weeklyCount:'3',bus:'yes',fee:'320,000원',enrollDate:off(-30),status:'active',memo:'기초 보강 필요',createdAt:Date.now()},
+    {id:uid(),name:'박서연',grade:'중1',parentName:'박미란',phone:'010-9876-5432',subject:'소묘·수채화',classTime:'화목 5시',weeklyCount:'2',bus:'no',fee:'250,000원',enrollDate:off(-60),status:'active',memo:'',createdAt:Date.now()},
+    {id:uid(),name:'이도현',grade:'초5',parentName:'이철수',phone:'010-2222-3333',subject:'미술',classTime:'',weeklyCount:'1',bus:'check',fee:'',enrollDate:'',status:'pending',memo:'체험 수업 예정',createdAt:Date.now()},
+    {id:uid(),name:'최아영',grade:'중3',parentName:'최정희',phone:'010-4444-5555',subject:'입시미술',classTime:'월화수목 3시',weeklyCount:'3',bus:'yes',fee:'700,000원',enrollDate:off(-90),status:'active',memo:'',createdAt:Date.now()},
+    {id:uid(),name:'정우진',grade:'고1',parentName:'정명자',phone:'010-6666-7777',subject:'소묘',classTime:'토 10시',weeklyCount:'1',bus:'no',fee:'150,000원',enrollDate:off(-14),status:'new-reg',memo:'전학생',createdAt:Date.now()},
+  ];
+  DB.counselings=[
+    {id:uid(),type:'new',studentName:'김민준',parentName:'김영수',phone:'010-1234-5678',date:off(0),content:'미술 학습 현황 파악. 수채화 기초 보완 필요.',result:'pending',nextDate:off(7),feedbackNeeded:true,feedbackMemo:'시간 변경 가능 여부 확인 후 안내 필요',feedbackDone:false,checks:chk(0,1,2),createdAt:Date.now()},
+    {id:uid(),type:'existing',studentName:'박서연',parentName:'박미란',phone:'010-9876-5432',date:off(0),content:'소묘 실력 향상. 수채화 집중 필요.',result:'enrolled',nextDate:off(14),feedbackNeeded:false,feedbackMemo:'',feedbackDone:false,checks:chk(0,2,5),createdAt:Date.now()},
+    {id:uid(),type:'trial',studentName:'이도현',parentName:'이철수',phone:'010-2222-3333',date:off(-1),content:'초등 기초 미술. 체험 수업 진행.',result:'pending',nextDate:null,feedbackNeeded:true,feedbackMemo:'차량 운행 노선 확인 필요',feedbackDone:false,checks:chk(3),createdAt:Date.now()},
+    {id:uid(),type:'existing',studentName:'최아영',parentName:'최정희',phone:'010-4444-5555',date:off(-3),content:'입시 포트폴리오 점검. 개별 지도 논의.',result:'enrolled',nextDate:off(-1),feedbackNeeded:false,feedbackMemo:'',feedbackDone:false,checks:chk(0,1,2,5),createdAt:Date.now()},
+    {id:uid(),type:'new',studentName:'정우진',parentName:'정명자',phone:'010-6666-7777',date:off(-7),content:'소묘 레벨 테스트. 중상 수준.',result:'enrolled',nextDate:null,feedbackNeeded:false,feedbackMemo:'',feedbackDone:false,checks:chk(0,1,2,3,4,5),createdAt:Date.now()},
+  ];
+  // 결석/보강 샘플 — makeupExpiry 포함, 소멸 임박 케이스 포함
+  const abs1Id=uid(), abs2Id=uid(), abs3Id=uid(), mup1Id=uid();
+  DB.schedules=[
+    // 결석 — 5일 후 소멸 (임박 경고)
+    {id:abs1Id,category:'absent',title:'박서연 결석',studentName:'박서연',date:off(-25),makeupExpiry:off(5),makeupDone:false,makeupLinkedId:null,endDate:null,memo:'몸살로 결석',createdAt:Date.now()},
+    // 결석 — 이미 보강 완료
+    {id:abs2Id,category:'absent',title:'최아영 결석',studentName:'최아영',date:off(-20),makeupExpiry:off(10),makeupDone:true,makeupLinkedId:mup1Id,endDate:null,memo:'개인 사정',createdAt:Date.now()},
+    // 결석 — 넉넉하게 남음
+    {id:abs3Id,category:'absent',title:'김민준 결석',studentName:'김민준',date:off(-5),makeupExpiry:off(25),makeupDone:false,makeupLinkedId:null,endDate:null,memo:'감기',createdAt:Date.now()},
+    // 보강 완료 (abs2에 연결)
+    {id:mup1Id,category:'makeup',title:'최아영 보강',studentName:'최아영',date:off(-10),makeupLinkedId:abs2Id,endDate:null,memo:'보강 완료',createdAt:Date.now()},
+    {id:uid(),category:'event',title:'봄 전시회 준비',studentName:'',date:off(5),endDate:off(7),memo:'전 학생 작품 제출',makeupExpiry:null,makeupDone:false,makeupLinkedId:null,createdAt:Date.now()},
+    {id:uid(),category:'notice',title:'어린이날 휴원',studentName:'',date:off(10),endDate:off(10),memo:'전체 수업 없음',makeupExpiry:null,makeupDone:false,makeupLinkedId:null,createdAt:Date.now()},
+    {id:uid(),category:'event',title:'학부모 참관 수업',studentName:'',date:off(14),endDate:null,memo:'오후 4시',makeupExpiry:null,makeupDone:false,makeupLinkedId:null,createdAt:Date.now()},
+  ];
+  DB.todos=[
+    {id:uid(),text:'4월 수강료 수납 현황 확인',category:'payment',dueDate:off(2),done:false,doneAt:null,createdAt:Date.now()},
+    {id:uid(),text:'이도현 학생 체험 수업 후 결과 안내',category:'parent',dueDate:off(1),done:false,doneAt:null,createdAt:Date.now()},
+    {id:uid(),text:'5월 시간표 초안 작성',category:'admin',dueDate:off(7),done:false,doneAt:null,createdAt:Date.now()},
+    {id:uid(),text:'봄 전시회 홍보물 준비',category:'class',dueDate:off(5),done:false,doneAt:null,createdAt:Date.now()},
+    {id:uid(),text:'학부모 참관 안내문 발송',category:'parent',dueDate:off(13),done:false,doneAt:null,createdAt:Date.now()},
+    {id:uid(),text:'3월 보강 수업 일정 정리',category:'class',dueDate:null,done:true,doneAt:Date.now()-86400000,createdAt:Date.now()-86400000*3},
+  ];
+  saveDB();
+}
+
+insertSample();
+init();
+</script>
+</body>
+</html>
