@@ -1100,11 +1100,12 @@ function init() {
   const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth(); selDate = today();
   setupDropZone();
   loadGasConfig();
-  // GAS 설정이 있으면 자동으로 불러오기
   const cfg = getGasConfig();
   if(cfg.url) {
+    // GAS 설정 있으면 무조건 Google Drive에서 불러오기 (샘플 실행 안 함)
     pullFromGas(true);
   } else {
+    // GAS 설정 없으면 로컬 데이터 사용, 없으면 샘플
     insertSample();
     renderAll();
   }
@@ -2337,8 +2338,7 @@ async function pullFromGas(silent=false) {
   const cfg = getGasConfig();
   if(!cfg.url){
     if(!silent){ alert('먼저 데이터 관리 화면에서 Apps Script URL을 설정해 주세요.'); showView('data'); }
-    // URL 없으면 로컬 데이터 사용, 로컬도 없으면 샘플
-    if(!DB.counselings || !DB.counselings.length) insertSample();
+    insertSample();
     renderAll(); return;
   }
   if(!silent) setGistStatus('⏳ 불러오는 중...', 'var(--text2)');
@@ -2347,26 +2347,30 @@ async function pullFromGas(silent=false) {
     const res = await fetch(cfg.url + '?action=load&t=' + Date.now());
     const text = await res.text();
     let parsed;
-    try { parsed = JSON.parse(text); } catch(e){ throw new Error('데이터 형식 오류'); }
+    try { parsed = JSON.parse(text); } catch(e){ throw new Error('데이터 형식 오류: '+text.slice(0,50)); }
     if(parsed.error) throw new Error(parsed.error);
-    // 빈 데이터면 로컬 확인 후 샘플
-    if(!parsed.counselings && !parsed.students && !parsed.schedules) {
-      if(!DB.counselings || !DB.counselings.length) insertSample();
-    } else {
-      DB = { ...DB, ...parsed };
-      if(!DB.todos) DB.todos = [];
-      if(!DB.categories) DB.categories = { academy:[], home:[] };
-      // GAS 설정 유지
-      localStorage.setItem(GAS_LS, JSON.stringify(cfg));
-      saveDB();
+    // Google Drive에 실제 데이터가 있으면 사용
+    if(parsed.counselings || parsed.students || parsed.schedules) {
+      DB = {
+        version: DB.version,
+        counselings:[], students:[], schedules:[], templates:[], todos:[],
+        categories:{academy:[],home:[]},
+        ...parsed
+      };
+      if(!DB.todos) DB.todos=[];
+      if(!DB.categories) DB.categories={academy:[],home:[]};
     }
+    // Google Drive가 비어있어도 샘플 보여주지 않음
+    // GAS 설정 유지
+    localStorage.setItem(GAS_LS, JSON.stringify(cfg));
+    saveDB();
     setSyncDot('ok');
     if(!silent) setGistStatus('✅ 불러오기 완료! ' + new Date().toLocaleTimeString('ko-KR'), 'var(--c-existing)');
     renderAll();
   } catch(e) {
     setSyncDot('err');
     if(!silent) setGistStatus('❌ 불러오기 실패: '+e.message, 'var(--overdue)');
-    // 실패시 로컬 데이터 사용 (샘플 덮어쓰기 안 함)
+    // 실패해도 샘플 보여주지 않고 현재 상태 유지
     renderAll();
   }
 }
@@ -2466,7 +2470,7 @@ function insertSample() {
   saveDB();
 }
 
-insertSample();
+// insertSample은 init() 안에서 GAS 설정 없을 때만 호출됨
 init();
 </script>
 </body>
